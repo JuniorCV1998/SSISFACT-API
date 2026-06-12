@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: ssisfact-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/db_ssimple_ssifact?serverTimezone=America/Lima
+    username: root
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        proc:
+          param_null_passing: true
+
+# JWT Configuration
+jwt:
+  secret: ssisfact-api-jwt-secret-key-2026-must-be-at-least-256-bits-long-for-hs256
+  expiration: 86400000  # 24 hours in milliseconds
