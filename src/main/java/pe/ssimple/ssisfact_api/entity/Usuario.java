@@ -24,6 +24,6 @@ public class Usuario {
     @Column(name = "documento", length = 20)
     private String documento;
 
-    @Column(name = "password", length = 255)
+    @Column(name = "contrasena", length = 255)
     private String password;
 }
