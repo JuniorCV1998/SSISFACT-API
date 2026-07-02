@@ -12,6 +12,7 @@ import pe.ssimple.ssisfact_api.dto.RegisterCompany.CompanyConfirmRequest;
 import pe.ssimple.ssisfact_api.dto.RegisterCompany.CompanyRegisterRequest;
 import pe.ssimple.ssisfact_api.dto.RegisterCompany.CompanyRegisterResponse;
 import pe.ssimple.ssisfact_api.service.CompanyRegisterService;
+import pe.ssimple.ssisfact_api.util.ResponseBuilder;
 
 @RestController
 @RequestMapping("/register")
@@ -20,46 +21,17 @@ public class CompanyRegisterController {
 
     private final CompanyRegisterService companyRegisterService;
 
-    /**
-     * Valida y registra el proceso de creación de empresa.
-     */
     @PostMapping("/validateCompany")
     public ResponseEntity<ApiResponse<CompanyRegisterResponse>> registrarEmpresa(
             @Valid @RequestBody CompanyRegisterRequest request) {
 
-        return buildResponse(
-                companyRegisterService.registrarEmpresa(request));
+        return ResponseBuilder.build(companyRegisterService.registrarEmpresa(request), "OK");
     }
 
-    /**
-     * Confirma el proceso y crea empresa + usuario administrador.
-     */
     @PostMapping("/confirmCompany")
     public ResponseEntity<ApiResponse<CompanyRegisterResponse>> confirmarEmpresa(
             @Valid @RequestBody CompanyConfirmRequest request) {
 
-        return buildResponse(
-                companyRegisterService.confirmarEmpresa(request));
-    }
-
-    /**
-     * Construye respuesta estándar para todos los endpoints
-     */
-    private ResponseEntity<ApiResponse<CompanyRegisterResponse>>
-    buildResponse(CompanyRegisterResponse response) {
-
-        if (!"OK".equals(response.getEstado())
-                && !"CONFIRMADO".equals(response.getEstado())) {
-
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(
-                            response.getMensaje(),
-                            response));
-        }
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response.getMensaje(),
-                        response));
+        return ResponseBuilder.build(companyRegisterService.confirmarEmpresa(request), "OK", "CONFIRMADO");
     }
 }

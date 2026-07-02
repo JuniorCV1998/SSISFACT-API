@@ -45,6 +45,14 @@ public class JwtService {
         return extractClaims(token).getSubject();
     }
 
+    public Long extractEmpresaId(String token) {
+        return extractClaims(token).get("empresaId", Long.class);
+    }
+
+    public Long extractSucursalId(String token) {
+        return extractClaims(token).get("sucursalId", Long.class);
+    }
+
     public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
         final Claims claims = extractClaims(token);
         return claimsResolver.apply(claims);

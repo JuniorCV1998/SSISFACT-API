@@ -1,41 +1,36 @@
 package pe.ssimple.ssisfact_api.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
+import pe.ssimple.ssisfact_api.util.SqlErrorMapper;
 
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String,String>>>
+    public ResponseEntity<ApiResponse<Void>>
     handleValidationExceptions(MethodArgumentNotValidException ex) {
 
-        Map<String, String> errors = new HashMap<>();
+        String message = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(error -> "El campo '" + error.getField() + "' " + error.getDefaultMessage())
+                .orElse("Error de validación");
 
-        ex.getBindingResult().getFieldErrors()
-                .forEach(error ->
-                        errors.put(
-                                error.getField(),
-                                error.getDefaultMessage()));
-
-        log.warn("Error de validación: {}", errors);
+        log.warn("Error de validación: {}", message);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(
-                        "Error de validación",
-                        errors));
+                .body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -49,37 +44,36 @@ public class GlobalExceptionHandler {
                         "Usuario o contraseña incorrectos"));
     }
 
-    @ExceptionHandler(BadSqlGrammarException.class)
+    @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiResponse<Void>>
-    handleSqlException(BadSqlGrammarException ex) {
+    handleDataAccessException(DataAccessException ex) {
 
-        // imprime SQL + stack completo
-        log.error("Error SQL:", ex);
+        Throwable cause = ex.getMostSpecificCause();
+        int errorCode = SqlErrorMapper.extractCode(cause.getMessage());
+        log.error("[DataAccessException] tipo={} codigo={} causa='{}'",
+                ex.getClass().getSimpleName(), errorCode, cause.getMessage(), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(
-                        "Error en consulta SQL"));
+                .body(ApiResponse.error(SqlErrorMapper.toSafeMessage(cause.getMessage())));
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>>
     handleRuntimeException(RuntimeException ex) {
 
-        log.error("RuntimeException:", ex);
+        log.error("[RuntimeException] tipo={} mensaje='{}'", ex.getClass().getSimpleName(), ex.getMessage(), ex);
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(
-                        ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>>
     handleException(Exception ex) {
 
-        log.error("Error no controlado:", ex);
+        log.error("[Exception] tipo={} mensaje='{}'", ex.getClass().getSimpleName(), ex.getMessage(), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(
-                        "Ocurrió un error interno"));
+                .body(ApiResponse.error("Ocurrió un error interno"));
     }
 }
