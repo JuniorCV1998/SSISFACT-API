@@ -13,6 +13,8 @@ CREATE TABLE empresas (
     email VARCHAR(100),
     logo_url VARCHAR(255),
     estado TINYINT NOT NULL DEFAULT 1 COMMENT '0 → eliminado, 1 → activo, 2 → pendient',
+    username_sunat VARCHAR(100) COMMENT 'Usuario SOL/SUNAT, opcional',
+    password_sunat VARCHAR(500) COMMENT 'Clave SOL/SUNAT encriptada, opcional',
     fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Se agrega automaticamente en cada registro',
     fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'se actualiza en cada update'
 );
@@ -511,6 +513,52 @@ CREATE TABLE pagos (
 );
 -- Una venta puede tener varios pagos, pero backend deberia de validar que todos los pagos no superen el total de la venta
 -- y poder agregar a lo mucho 3 diferentes pagos
+
+-- =========================
+-- SUNAT_NOTIFICACIONES
+-- =========================
+CREATE TABLE sunat_notificaciones (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
+    ruc VARCHAR(20),
+    sunat_id VARCHAR(50) NOT NULL,
+    asunto VARCHAR(1000),
+    fecha_publicacion VARCHAR(100),
+    categoria_codigo VARCHAR(50),
+    categoria_descripcion VARCHAR(500),
+    leido TINYINT(1) NOT NULL DEFAULT 0,
+    destacado TINYINT(1) NOT NULL DEFAULT 0,
+    urgente TINYINT(1) NOT NULL DEFAULT 0,
+    tiene_adjunto TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_ultima_sincronizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_sunat_notif_empresa_sunat_id (empresa_id, sunat_id),
+    CONSTRAINT fk_sunat_notif_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_sunat_notif_empresa ON sunat_notificaciones(empresa_id);
+
+-- =========================
+-- SUNAT_MENSAJES
+-- =========================
+CREATE TABLE sunat_mensajes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
+    ruc VARCHAR(20),
+    sunat_id VARCHAR(50) NOT NULL,
+    asunto VARCHAR(1000),
+    mensaje VARCHAR(4000),
+    remitente VARCHAR(500),
+    fecha_publicacion VARCHAR(100),
+    leido TINYINT(1) NOT NULL DEFAULT 0,
+    tiene_adjunto TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_ultima_sincronizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_sunat_mensaje_empresa_sunat_id (empresa_id, sunat_id),
+    CONSTRAINT fk_sunat_mensaje_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_sunat_mensaje_empresa ON sunat_mensajes(empresa_id);
 
 -- EMPRESA
 INSERT INTO empresas (nombre, ruc) VALUES ('Mi Empresa Demo', '12345678901');

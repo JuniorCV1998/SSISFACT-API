@@ -18,3 +18,16 @@ spring:
 jwt:
   secret: ssisfact-api-jwt-secret-key-2026-must-be-at-least-256-bits-long-for-hs256
   expiration: 86400000  # 24 hours in milliseconds
+
+# Integración con el bot de automatización SUNAT
+sunat:
+  bot:
+    base-url: http://localhost:3000
+    # Generoso a propósito: el bot hace automatización de navegador real contra
+    # SUNAT (login + navegación), no es una llamada HTTP simple.
+    timeout-ms: 60000
+  cache:
+    ttl-seconds: 1800  # 30 minutos
+  crypto:
+    # AES-256, 32 bytes en Base64. Cambiar por variable de entorno en producción.
+    secret-key: ${SUNAT_CRYPTO_KEY:m4ovYQsnFXm2edm4FsbTZ2Yx06bjt0q5ZjC+ufCd56A=}
