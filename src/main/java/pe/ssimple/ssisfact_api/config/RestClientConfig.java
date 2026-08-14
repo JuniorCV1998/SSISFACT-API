@@ -20,4 +20,14 @@ public class RestClientConfig {
                 .setReadTimeout(Duration.ofMillis(sunatBotTimeoutMs))
                 .build();
     }
+
+    @Bean
+    public RestTemplate decolectaRestTemplate(
+            RestTemplateBuilder builder,
+            @Value("${decolecta.timeout-ms}") long decolectaTimeoutMs) {
+        return builder
+                .setConnectTimeout(Duration.ofMillis(decolectaTimeoutMs))
+                .setReadTimeout(Duration.ofMillis(decolectaTimeoutMs))
+                .build();
+    }
 }

@@ -9,8 +9,8 @@ import java.util.List;
 
 public interface ProductoRepository {
     ProductoResponse guardarProducto(ProductoRequest request);
-    List<ProductoItemResponse> listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto);
-    List<ProductoCatalogoResponse> listarCatalogo(Long empresaId, String busqueda, int page, int size);
+    List<ProductoItemResponse> listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto, Long sucursalId);
+    List<ProductoCatalogoResponse> listarCatalogo(Long empresaId, String busqueda, int page, int size, Long sucursalId);
     ProductoResponse activarProducto(Long productoId, Long empresaId);
     ProductoResponse desactivarProducto(Long productoId, Long empresaId);
     ProductoResponse eliminarProducto(Long productoId, Long empresaId);

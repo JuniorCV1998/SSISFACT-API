@@ -53,6 +53,10 @@ public class JwtService {
         return extractClaims(token).get("sucursalId", Long.class);
     }
 
+    public Long extractUsuarioId(String token) {
+        return extractClaims(token).get("usuarioId", Long.class);
+    }
+
     public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
         final Claims claims = extractClaims(token);
         return claimsResolver.apply(claims);
@@ -75,7 +79,7 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 
-    private Date extractExpiration(String token) {
+    public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 

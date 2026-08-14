@@ -123,6 +123,19 @@ BEGIN
                 INSERT INTO sucursales (empresa_id, nombre, direccion, telefono, estado, fecha_creacion)
                 VALUES (v_id_empresa, CONCAT('Sucursal Principal - ', v_razon_social), v_direccion, v_telefono, 1, NOW());
 
+                -- ============================================================
+                -- CLIENTE GENÉRICO (para ventas sin cliente identificado)
+                -- ============================================================
+                INSERT INTO clientes (empresa_id, tipo_documento, numero_documento, nombre, estado, fecha_creacion)
+                VALUES (v_id_empresa, 'DNI', '00000000', 'CLIENTE VARIOS', 1, NOW());
+
+                -- ============================================================
+                -- SERIES PRINCIPALES (boleta simple y guía, sin valor tributario)
+                -- ============================================================
+                INSERT INTO series (empresa_id, tipo, serie, correlativo_actual, es_principal, estado)
+                VALUES (v_id_empresa, 'BOLETA', 'B001', 0, 1, 1),
+                       (v_id_empresa, 'GUIA', 'T001', 0, 1, 1);
+
                 -- INSERT USUARIO
                 INSERT INTO usuarios (empresa_id, nombre, email, documento, contrasena, estado, fecha_creacion)
                 VALUES (v_id_empresa, v_nombre_admin, v_email_admin, v_documento, v_contrasena, 1, NOW());

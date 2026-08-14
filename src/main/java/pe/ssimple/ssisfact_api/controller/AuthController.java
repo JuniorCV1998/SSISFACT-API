@@ -18,6 +18,7 @@ import pe.ssimple.ssisfact_api.dto.Auth.LoginRequest;
 import pe.ssimple.ssisfact_api.dto.Auth.LoginResponse;
 import pe.ssimple.ssisfact_api.service.CustomUserDetails;
 import pe.ssimple.ssisfact_api.service.JwtService;
+import pe.ssimple.ssisfact_api.service.TokenBlacklistService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest credentials) {
@@ -48,24 +50,38 @@ public class AuthController {
                 .toList();
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put("usuarioId", user.getUsuarioId());
         claims.put("empresaId", user.getEmpresaId());
         claims.put("sucursalId", user.getSucursalId());
         claims.put("roles", roles);
 
         String token = jwtService.generateToken(user.getUsername(), claims);
 
-        LoginResponse loginResponse = new LoginResponse(token, user.getUsername(), roles);
+        // Sesión única por usuario: invalida cualquier token anterior de este usuario
+        tokenBlacklistService.registerActiveToken(user.getUsuarioId(), token, jwtService.extractExpiration(token));
+
+        boolean esAdmin = roles.contains("ROLE_ADMIN");
+
+        LoginResponse loginResponse = new LoginResponse(token, user.getUsername(), roles, user.getSucursalId(), esAdmin);
         return ResponseEntity.ok(ApiResponse.success("Login exitoso", loginResponse));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
-        // Invalidar la sesión si existe
-        request.getSession(false).invalidate();
-        
-        // Limpiar el contexto de seguridad
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                tokenBlacklistService.blacklist(token, jwtService.extractExpiration(token));
+            } catch (Exception e) {
+                // Token ya inválido/expirado: no hay nada que invalidar, el logout igual es "exitoso"
+            }
+        }
+
         SecurityContextHolder.clearContext();
-        
+
         return ResponseEntity.ok(ApiResponse.success("Logout exitoso", null));
     }
 }

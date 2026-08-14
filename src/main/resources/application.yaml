@@ -23,11 +23,21 @@ jwt:
 sunat:
   bot:
     base-url: http://localhost:3000
-    # Generoso a propósito: el bot hace automatización de navegador real contra
-    # SUNAT (login + navegación), no es una llamada HTTP simple.
-    timeout-ms: 60000
+    # irABuzon/irABuzonMensajes ya no bloquean una sola llamada HTTP larga:
+    # usan job+polling, así que esto solo aplica a cada llamada individual
+    # (login, iniciar job, cada poll), que son rápidas.
+    timeout-ms: 15000
+    job:
+      poll-interval-ms: 3000   # cada cuánto se consulta el estado del job
+      max-wait-ms: 600000      # 10 min: tope total esperando un job (buzones grandes)
   cache:
     ttl-seconds: 1800  # 30 minutos
   crypto:
     # AES-256, 32 bytes en Base64. Cambiar por variable de entorno en producción.
     secret-key: ${SUNAT_CRYPTO_KEY:m4ovYQsnFXm2edm4FsbTZ2Yx06bjt0q5ZjC+ufCd56A=}
+
+# Consulta de DNI/RUC (Decolecta) — caché local en cliente_documento
+decolecta:
+  base-url: ${DECOLECTA_BASE_URL:https://api.decolecta.com/v1}
+  token: ${DECOLECTA_TOKEN:sk_3893.TKjkyKhUYJ16KK9bqSbyD6e4URMaDVSS}
+  timeout-ms: 10000

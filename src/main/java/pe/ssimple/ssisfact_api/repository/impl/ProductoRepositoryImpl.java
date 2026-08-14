@@ -42,10 +42,10 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     }
 
     @Override
-    public List<ProductoItemResponse> listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto) {
+    public List<ProductoItemResponse> listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto, Long sucursalId) {
 
         return jdbcTemplate.query(
-                "CALL sp_listar_productos(?,?,?,?,?,?)",
+                "CALL sp_listar_productos(?,?,?,?,?,?,?)",
                 (rs, rowNum) -> {
                     ProductoItemResponse item = new ProductoItemResponse();
                     item.setId(rs.getLong("id"));
@@ -70,14 +70,14 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                     item.setTotalRegistros(rs.getInt("total_registros"));
                     return item;
                 },
-                empresaId, busqueda, page, size, estado, mostrarCosto);
+                empresaId, busqueda, page, size, estado, mostrarCosto, sucursalId);
     }
 
     @Override
-    public List<ProductoCatalogoResponse> listarCatalogo(Long empresaId, String busqueda, int page, int size) {
+    public List<ProductoCatalogoResponse> listarCatalogo(Long empresaId, String busqueda, int page, int size, Long sucursalId) {
 
         return jdbcTemplate.query(
-                "CALL sp_listar_productos(?,?,?,?,?,?)",
+                "CALL sp_listar_productos(?,?,?,?,?,?,?)",
                 (rs, rowNum) -> {
                     String codigoBarras = rs.getString("codigo_barras");
                     String codigo = (codigoBarras != null && !codigoBarras.isBlank())
@@ -98,7 +98,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                     return item;
                 },
                 // estado=1 (solo activos) y mostrarCosto=0 fijos: este endpoint es para vendedores/clientes
-                empresaId, busqueda, page, size, 1, 0);
+                empresaId, busqueda, page, size, 1, 0, sucursalId);
     }
 
     @Override

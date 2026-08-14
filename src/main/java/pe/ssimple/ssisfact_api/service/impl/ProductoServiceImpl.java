@@ -83,6 +83,7 @@ public class ProductoServiceImpl implements ProductoService {
             stockRequest.setProductoId(response.getId());
             stockRequest.setSucursalId(request.getSucursalId());
             stockRequest.setCantidad(request.getCantidadInicial());
+            stockRequest.setTipo(request.getCompraId() != null ? "COMPRA" : "AJUSTE");
             stockRequest.setMotivo(request.getMotivoIngreso());
             stockRequest.setCompraId(request.getCompraId());
 
@@ -108,10 +109,10 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public ProductoListResponse listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto) {
+    public ProductoListResponse listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto, Long sucursalId) {
 
         List<ProductoItemResponse> items = productoRepository.listarProductos(
-                empresaId, busqueda.trim(), page, size, estado, mostrarCosto);
+                empresaId, busqueda.trim(), page, size, estado, mostrarCosto, sucursalId);
 
         int total = items.isEmpty() ? 0 : items.get(0).getTotalRegistros();
 
@@ -119,10 +120,10 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public ProductoCatalogoListResponse listarCatalogo(Long empresaId, String busqueda, int page, int size) {
+    public ProductoCatalogoListResponse listarCatalogo(Long empresaId, String busqueda, int page, int size, Long sucursalId) {
 
         List<ProductoCatalogoResponse> items = productoRepository.listarCatalogo(
-                empresaId, busqueda.trim(), page, size);
+                empresaId, busqueda.trim(), page, size, sucursalId);
 
         int total = items.isEmpty() ? 0 : items.get(0).getTotalRegistros();
 

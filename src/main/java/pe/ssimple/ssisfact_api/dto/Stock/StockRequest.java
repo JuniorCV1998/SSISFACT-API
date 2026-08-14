@@ -19,6 +19,9 @@ public class StockRequest {
     @Min(value = 1, message = "La cantidad debe ser mayor a 0")
     private Integer cantidad;
 
+    @NotBlank(message = "El tipo es obligatorio")
+    private String tipo; // COMPRA, DEVOLUCION o AJUSTE
+
     @NotBlank(message = "El motivo es obligatorio")
     @Size(max = 255, message = "El motivo no puede superar los 255 caracteres")
     private String motivo;

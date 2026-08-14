@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("register/validateCompany").permitAll()
                 .requestMatchers("register/confirmCompany").permitAll()
+                .requestMatchers("register/consultarRuc/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             )

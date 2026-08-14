@@ -8,6 +8,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
 import pe.ssimple.ssisfact_api.dto.Sunat.SunatApiResponse;
@@ -56,6 +58,59 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(SunatApiResponse.failure("CREDENCIALES_NO_CONFIGURADAS", ex.getMessage()));
+    }
+
+    @ExceptionHandler(VentaValidationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleVentaValidation(VentaValidationException ex) {
+
+        log.warn("Venta: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DocumentoValidationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleDocumentoValidation(DocumentoValidationException ex) {
+
+        log.warn("Documento: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccesoSucursalDenegadoException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleAccesoSucursalDenegado(AccesoSucursalDenegadoException ex) {
+
+        log.warn("Acceso a sucursal denegado: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleNoHandlerFound(NoHandlerFoundException ex) {
+
+        log.warn("Ruta no encontrada: {} {}", ex.getHttpMethod(), ex.getRequestURL());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("El recurso solicitado no existe"));
+    }
+
+    // Spring 6.1+/Boot 3.2+: cuando no hay handler, ResourceHttpRequestHandler
+    // lanza esto (no NoHandlerFoundException) al no encontrar el recurso estático.
+    // Es la excepción real que se dispara para cualquier ruta no mapeada.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleNoResourceFound(NoResourceFoundException ex) {
+
+        log.warn("Ruta no encontrada: {} {}", ex.getHttpMethod(), ex.getResourcePath());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("El recurso solicitado no existe"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

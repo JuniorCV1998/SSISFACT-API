@@ -7,8 +7,8 @@ import pe.ssimple.ssisfact_api.dto.Producto.ProductoResponse;
 
 public interface ProductoService {
     ProductoResponse guardarProducto(ProductoRequest request);
-    ProductoListResponse listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto);
-    ProductoCatalogoListResponse listarCatalogo(Long empresaId, String busqueda, int page, int size);
+    ProductoListResponse listarProductos(Long empresaId, String busqueda, int page, int size, int estado, int mostrarCosto, Long sucursalId);
+    ProductoCatalogoListResponse listarCatalogo(Long empresaId, String busqueda, int page, int size, Long sucursalId);
     ProductoResponse activarProducto(Long productoId, Long empresaId);
     ProductoResponse desactivarProducto(Long productoId, Long empresaId);
     ProductoResponse eliminarProducto(Long productoId, Long empresaId);
