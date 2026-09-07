@@ -18,8 +18,8 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final CategoriaRepository categoriaRepository;
 
     @Override
-    public List<CategoriaResponse> listarCategorias(Long empresaId, String busqueda) {
-        return categoriaRepository.listarCategorias(empresaId, busqueda.trim(), -1);
+    public List<CategoriaResponse> listarCategorias(Long empresaId, String busqueda, int estado) {
+        return categoriaRepository.listarCategorias(empresaId, busqueda.trim(), estado);
     }
 
     @Override

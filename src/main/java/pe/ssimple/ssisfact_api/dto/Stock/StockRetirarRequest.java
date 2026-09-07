@@ -22,8 +22,7 @@ public class StockRetirarRequest {
     @NotBlank(message = "El tipo es obligatorio")
     private String tipo; // VENTA, MERMA o AJUSTE
 
-    @NotBlank(message = "El motivo es obligatorio")
-    @Size(max = 255, message = "El motivo no puede superar los 255 caracteres")
+    @Size(max = 100, message = "El motivo no puede superar los 100 caracteres")
     private String motivo;
 
     private Long referenciaId;

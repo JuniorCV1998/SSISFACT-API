@@ -3,6 +3,7 @@ package pe.ssimple.ssisfact_api.repository.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import pe.ssimple.ssisfact_api.dto.Producto.EtiquetaProductoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoItemResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoRequest;
@@ -10,7 +11,9 @@ import pe.ssimple.ssisfact_api.dto.Producto.ProductoResponse;
 import pe.ssimple.ssisfact_api.repository.ProductoRepository;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -61,6 +64,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                     item.setStockMinimo(rs.getInt("stock_minimo"));
                     item.setAfectoImpuesto(rs.getInt("afecto_impuesto"));
                     item.setStockTotal(rs.getInt("stock_total"));
+                    item.setStockSucursal(rs.getObject("stock_sucursal", Integer.class));
                     item.setImagenUrl(rs.getString("imagen_url"));
                     item.setEstado(rs.getInt("estado"));
                     Timestamp fc = rs.getTimestamp("fecha_creacion");
@@ -92,7 +96,10 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                     item.setDescripcion(rs.getString("descripcion"));
                     item.setPrecio(rs.getBigDecimal("precio"));
                     item.setAfectoImpuesto(rs.getInt("afecto_impuesto"));
-                    item.setStockTotal(rs.getInt("stock_total"));
+                    // El catálogo (Punto de Venta) sigue mostrando el stock acotado a la
+                    // sucursal cuando se filtra, para no ofrecer stock que no está ahí.
+                    Integer stockSucursal = rs.getObject("stock_sucursal", Integer.class);
+                    item.setStockTotal(stockSucursal != null ? stockSucursal : rs.getInt("stock_total"));
                     item.setImagenUrl(rs.getString("imagen_url"));
                     item.setTotalRegistros(rs.getInt("total_registros"));
                     return item;
@@ -135,5 +142,58 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                         rs.getString("mensaje"),
                         rs.getLong("id")),
                 productoId, empresaId);
+    }
+
+    @Override
+    public List<EtiquetaProductoResponse> obtenerParaEtiquetas(List<Long> productoIds, Long empresaId) {
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT nombre, COALESCE(NULLIF(codigo_barras, ''), codigo) AS codigo, precio " +
+                "FROM productos " +
+                "WHERE empresa_id = ? AND estado <> -1 ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(empresaId);
+
+        // Sin ids: trae todos los productos de la empresa. Con ids: solo esos.
+        if (productoIds != null && !productoIds.isEmpty()) {
+            String placeholders = productoIds.stream().map(id -> "?").collect(Collectors.joining(","));
+            sql.append("AND id IN (").append(placeholders).append(") ");
+            params.addAll(productoIds);
+        }
+
+        sql.append("ORDER BY nombre ASC");
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                (rs, rowNum) -> new EtiquetaProductoResponse(
+                        rs.getString("nombre"),
+                        rs.getString("codigo"),
+                        rs.getBigDecimal("precio")),
+                params.toArray());
+    }
+
+    @Override
+    public ProductoResponse actualizarImagen(Long productoId, Long empresaId, String imagenUrl) {
+
+        return jdbcTemplate.queryForObject(
+                "CALL sp_actualizar_imagen_producto(?,?,?)",
+                (rs, rowNum) -> new ProductoResponse(
+                        rs.getString("estado"),
+                        rs.getString("mensaje"),
+                        rs.getLong("id")),
+                productoId, empresaId, imagenUrl);
+    }
+
+    @Override
+    public String obtenerImagenUrlActual(Long productoId, Long empresaId) {
+
+        return jdbcTemplate.query(
+                        "SELECT imagen_url FROM productos WHERE id = ? AND empresa_id = ?",
+                        (rs, rowNum) -> rs.getString("imagen_url"),
+                        productoId, empresaId)
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 }

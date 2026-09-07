@@ -112,6 +112,12 @@
 			<version>0.12.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Cloudflare R2 (S3-compatible) para imágenes de productos -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.29.52</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

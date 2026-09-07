@@ -1,5 +1,6 @@
 package pe.ssimple.ssisfact_api.repository;
 
+import pe.ssimple.ssisfact_api.dto.Producto.EtiquetaProductoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoItemResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoRequest;
@@ -14,4 +15,7 @@ public interface ProductoRepository {
     ProductoResponse activarProducto(Long productoId, Long empresaId);
     ProductoResponse desactivarProducto(Long productoId, Long empresaId);
     ProductoResponse eliminarProducto(Long productoId, Long empresaId);
+    List<EtiquetaProductoResponse> obtenerParaEtiquetas(List<Long> productoIds, Long empresaId);
+    ProductoResponse actualizarImagen(Long productoId, Long empresaId, String imagenUrl);
+    String obtenerImagenUrlActual(Long productoId, Long empresaId);
 }

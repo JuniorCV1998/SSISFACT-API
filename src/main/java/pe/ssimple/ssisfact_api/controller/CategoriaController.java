@@ -43,9 +43,10 @@ public class CategoriaController {
     @GetMapping("/listar")
     public ResponseEntity<ApiResponse<List<CategoriaResponse>>> listarCategorias(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "") String busqueda) {
+            @RequestParam(defaultValue = "") String busqueda,
+            @RequestParam(defaultValue = "-1") int estado) {
 
-        List<CategoriaResponse> result = categoriaService.listarCategorias(user.getEmpresaId(), busqueda);
+        List<CategoriaResponse> result = categoriaService.listarCategorias(user.getEmpresaId(), busqueda, estado);
 
         return ResponseEntity.ok(ApiResponse.success("Categorías obtenidas correctamente", result));
     }

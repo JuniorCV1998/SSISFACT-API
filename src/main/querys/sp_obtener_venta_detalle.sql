@@ -16,6 +16,9 @@ BEGIN
     SELECT
         v.id,
         v.empresa_id,
+        e.nombre AS empresa_nombre,
+        e.ruc AS empresa_ruc,
+        e.direccion AS empresa_direccion,
         v.sucursal_id,
         s.nombre AS sucursal_nombre,
         v.cliente_id,
@@ -36,6 +39,7 @@ BEGIN
         cp.serie AS comprobante_serie,
         cp.numero AS comprobante_numero
     FROM ventas v
+    INNER JOIN empresas e ON e.id = v.empresa_id
     INNER JOIN sucursales s ON s.id = v.sucursal_id
     INNER JOIN clientes c ON c.id = v.cliente_id
     INNER JOIN usuarios u ON u.id = v.usuario_id

@@ -19,6 +19,7 @@ BEGIN
         c.fecha_actualizacion
     FROM categorias c
     WHERE c.empresa_id = p_empresa_id
+    AND c.estado <> -1  -- EXCLUIR ELIMINADAS siempre, sin importar el filtro
     AND (
         p_estado = -1
         OR c.estado = p_estado
@@ -41,7 +42,8 @@ BEGIN
     Filtros:
         - Empresa
         - Nombre
-        - Estado (1=Activas, 0=Inactivas, -1=Todas)
+        - Estado (1=Activas, 0=Inactivas, -1=Todas). Las eliminadas (estado=-1
+          en la tabla) NUNCA aparecen, ni siquiera con -1 en este filtro.
 
     Tabla:
         - categorias

@@ -61,7 +61,7 @@ public class ProductoRequest {
     @Min(value = 1, message = "debe ser mayor a 0")
     private Integer cantidadInicial;
 
-    @Size(max = 255, message = "no puede superar los 255 caracteres")
+    @Size(max = 100, message = "no puede superar los 100 caracteres")
     @SafeText
     private String motivoIngreso;
 

@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
+import pe.ssimple.ssisfact_api.dto.Producto.EtiquetaProductoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoListResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoListResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoRequest;
@@ -14,6 +16,8 @@ import pe.ssimple.ssisfact_api.service.CustomUserDetails;
 import pe.ssimple.ssisfact_api.service.ProductoService;
 import pe.ssimple.ssisfact_api.util.ResponseBuilder;
 import pe.ssimple.ssisfact_api.util.SucursalAccessGuard;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/producto")
@@ -72,6 +76,29 @@ public class ProductoController {
                 user.getEmpresaId(), busqueda, page, size, sucursalId);
 
         return ResponseEntity.ok(ApiResponse.success("Productos obtenidos correctamente", result));
+    }
+
+    // Datos mínimos para que el front genere sus propios códigos de barras (Code128) e
+    // imprima etiquetas: nombre (orden alfabético), código de barras si tiene o si no
+    // el código interno, y precio de venta. Sin "ids", trae todos los productos de la empresa.
+    @GetMapping("/etiquetas")
+    public ResponseEntity<ApiResponse<List<EtiquetaProductoResponse>>> obtenerParaEtiquetas(
+            @RequestParam(required = false) List<Long> ids,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        List<EtiquetaProductoResponse> result = productoService.obtenerParaEtiquetas(ids, user.getEmpresaId());
+
+        return ResponseEntity.ok(ApiResponse.success("Productos obtenidos correctamente", result));
+    }
+
+    @PostMapping(value = "/{id}/imagen", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<ProductoResponse>> actualizarImagen(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        return ResponseBuilder.build(
+                productoService.actualizarImagen(id, user.getEmpresaId(), file), "OK");
     }
 
     @PostMapping("/activar/{id}")

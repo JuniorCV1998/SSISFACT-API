@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public class VentaItemDetalleResponse {
     private Long id;
     private Long productoId;
+    private String productoCodigo;
     private String productoNombre;
     private BigDecimal cantidad;
     private BigDecimal precioUnitario;

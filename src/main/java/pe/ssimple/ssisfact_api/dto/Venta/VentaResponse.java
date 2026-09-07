@@ -15,6 +15,8 @@ public class VentaResponse {
     private String comprobanteTipo;
     private String comprobanteSerie;
     private Integer comprobanteNumero;
+    // Listo para imprimir: "NP01-000001" (serie + correlativo con 6 dígitos).
+    private String comprobanteCodigo;
     private BigDecimal subtotal;
     private BigDecimal descuento;
     private BigDecimal impuestos;

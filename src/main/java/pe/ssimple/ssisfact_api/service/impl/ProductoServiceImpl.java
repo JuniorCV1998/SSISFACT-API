@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import pe.ssimple.ssisfact_api.dto.Producto.EtiquetaProductoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoListResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoItemResponse;
@@ -16,7 +17,9 @@ import pe.ssimple.ssisfact_api.dto.Stock.StockResponse;
 import pe.ssimple.ssisfact_api.repository.ProductoRepository;
 import pe.ssimple.ssisfact_api.service.ProductoService;
 import pe.ssimple.ssisfact_api.service.StockService;
+import pe.ssimple.ssisfact_api.service.StorageService;
 import pe.ssimple.ssisfact_api.util.SqlErrorMapper;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,6 +30,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     private final ProductoRepository productoRepository;
     private final StockService stockService;
+    private final StorageService storageService;
 
     @Override
     @Transactional
@@ -40,20 +44,22 @@ public class ProductoServiceImpl implements ProductoService {
                     0L);
         }
 
-        // VALIDAR STOCK INICIAL (si se especifica sucursal, cantidad y motivo son obligatorios)
+        // VALIDAR STOCK INICIAL (si se especifica sucursal, cantidad es obligatoria; motivo es opcional)
         if (request.getSucursalId() != null) {
             if (request.getCantidadInicial() == null || request.getCantidadInicial() <= 0) {
                 return new ProductoResponse("ERROR_STOCK", "La cantidad inicial debe ser mayor a 0", 0L);
             }
-            if (request.getMotivoIngreso() == null || request.getMotivoIngreso().trim().isEmpty()) {
-                return new ProductoResponse("ERROR_STOCK", "El motivo del ingreso de stock es obligatorio", 0L);
+            if (request.getMotivoIngreso() != null) {
+                request.setMotivoIngreso(request.getMotivoIngreso().trim());
             }
-            request.setMotivoIngreso(request.getMotivoIngreso().trim());
         }
 
         // NORMALIZAR STRINGS
         request.setNombre(request.getNombre().trim());
-        request.setCodigo(request.getCodigo().trim());
+        // Código interno es opcional: si no llega, el SP genera uno automático.
+        if (request.getCodigo() != null) {
+            request.setCodigo(request.getCodigo().trim());
+        }
         request.setCategoriaNombre(request.getCategoriaNombre().trim());
 
         if (request.getCodigoBarras() != null) {
@@ -143,5 +149,33 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     public ProductoResponse eliminarProducto(Long productoId, Long empresaId) {
         return productoRepository.eliminarProducto(productoId, empresaId);
+    }
+
+    @Override
+    public List<EtiquetaProductoResponse> obtenerParaEtiquetas(List<Long> productoIds, Long empresaId) {
+        return productoRepository.obtenerParaEtiquetas(productoIds, empresaId);
+    }
+
+    @Override
+    public ProductoResponse actualizarImagen(Long productoId, Long empresaId, MultipartFile file) {
+
+        String imagenAnterior = productoRepository.obtenerImagenUrlActual(productoId, empresaId);
+
+        String imagenUrl = storageService.subirImagen(file, "productos/" + empresaId);
+
+        ProductoResponse response = productoRepository.actualizarImagen(productoId, empresaId, imagenUrl);
+
+        if (!"OK".equals(response.getEstado())) {
+            log.warn("[actualizarImagen] SP devolvió error — estado={} mensaje='{}' productoId={} empresaId={}",
+                    response.getEstado(), response.getMensaje(), productoId, empresaId);
+            // La nueva imagen ya se subió a R2 pero no se guardó en BD: la borramos para no dejarla huérfana.
+            storageService.eliminarImagen(imagenUrl);
+            return response;
+        }
+
+        // Reemplazo exitoso: recién ahora borramos la imagen anterior (si tenía una).
+        storageService.eliminarImagen(imagenAnterior);
+
+        return response;
     }
 }

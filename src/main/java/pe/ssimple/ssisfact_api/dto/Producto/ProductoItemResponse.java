@@ -27,6 +27,7 @@ public class ProductoItemResponse {
     private Integer stockMinimo;
     private Integer afectoImpuesto;
     private Integer stockTotal;
+    private Integer stockSucursal;
     private String imagenUrl;
     private Integer estado;
     private LocalDateTime fechaCreacion;

@@ -19,7 +19,7 @@ public class VentaRequest {
     private Long clienteId;
 
     @NotNull(message = "es obligatorio")
-    private String tipoDocumento; // BOLETA o GUIA
+    private String tipoDocumento; // NOTA_PEDIDO (uso normal hoy), BOLETA o GUIA (reservados para SUNAT)
 
     @NotEmpty(message = "debe tener al menos un producto")
     @Valid

@@ -8,7 +8,7 @@ import pe.ssimple.ssisfact_api.dto.Categoria.CategoriaSimpleResponse;
 import java.util.List;
 
 public interface CategoriaService {
-    List<CategoriaResponse> listarCategorias(Long empresaId, String busqueda);
+    List<CategoriaResponse> listarCategorias(Long empresaId, String busqueda, int estado);
     List<CategoriaSimpleResponse> listarCategoriasParaSeleccion(Long empresaId, String busqueda);
     CategoriaSaveResponse guardarCategoria(CategoriaRequest request);
     CategoriaSaveResponse desactivarCategoria(Long categoriaId, Long empresaId);

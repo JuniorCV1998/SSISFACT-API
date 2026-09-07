@@ -19,6 +19,7 @@ BEGIN
 
     DECLARE v_id INT;
     DECLARE v_id_empresa INT;
+    DECLARE v_id_sucursal INT;
     DECLARE v_id_usuario INT;
     DECLARE v_id_existente INT;
 
@@ -123,6 +124,8 @@ BEGIN
                 INSERT INTO sucursales (empresa_id, nombre, direccion, telefono, estado, fecha_creacion)
                 VALUES (v_id_empresa, CONCAT('Sucursal Principal - ', v_razon_social), v_direccion, v_telefono, 1, NOW());
 
+                SET v_id_sucursal = LAST_INSERT_ID();
+
                 -- ============================================================
                 -- CLIENTE GENÉRICO (para ventas sin cliente identificado)
                 -- ============================================================
@@ -130,11 +133,19 @@ BEGIN
                 VALUES (v_id_empresa, 'DNI', '00000000', 'CLIENTE VARIOS', 1, NOW());
 
                 -- ============================================================
-                -- SERIES PRINCIPALES (boleta simple y guía, sin valor tributario)
+                -- SERIES PRINCIPALES
+                -- BOLETA/GUIA: empresa-wide por ahora, sin valor tributario hasta
+                -- activar la facturación electrónica (todavía no están en uso).
+                -- NOTA_PEDIDO: por sucursal desde el inicio, igual que hará SUNAT
+                -- el día que se declaren electrónicamente (una serie por
+                -- establecimiento anexo).
                 -- ============================================================
                 INSERT INTO series (empresa_id, tipo, serie, correlativo_actual, es_principal, estado)
                 VALUES (v_id_empresa, 'BOLETA', 'B001', 0, 1, 1),
                        (v_id_empresa, 'GUIA', 'T001', 0, 1, 1);
+
+                INSERT INTO series (empresa_id, sucursal_id, tipo, serie, correlativo_actual, es_principal, estado)
+                VALUES (v_id_empresa, v_id_sucursal, 'NOTA_PEDIDO', 'NP01', 0, 1, 1);
 
                 -- INSERT USUARIO
                 INSERT INTO usuarios (empresa_id, nombre, email, documento, contrasena, estado, fecha_creacion)

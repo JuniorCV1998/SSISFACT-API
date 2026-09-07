@@ -24,11 +24,11 @@ public interface VentaRepository {
     void insertarDetalleVenta(Long ventaId, Long productoId, BigDecimal cantidad, BigDecimal precioUnitario, BigDecimal subtotal, BigDecimal descuento);
     void actualizarStock(Long inventarioId, BigDecimal nuevoStock);
     void insertarMovimientoStock(Long productoId, Long sucursalId, String tipo, BigDecimal cantidad, String motivo, Long referenciaId);
-    ComprobanteNumeroResult generarNumeroComprobante(Long empresaId, String tipo);
+    ComprobanteNumeroResult generarNumeroComprobante(Long empresaId, Long sucursalId, String tipo);
     Long insertarComprobante(Long empresaId, Long ventaId, String tipo, String serie, Integer numero,
                               String clienteNombre, String clienteDocumento,
                               BigDecimal subtotal, BigDecimal descuento, BigDecimal impuestos, BigDecimal total);
-    void insertarPago(Long ventaId, String metodo, BigDecimal monto, String referencia);
+    void insertarPago(Long ventaId, String metodo, BigDecimal monto, BigDecimal montoRecibido, String referencia);
     void actualizarTotalesVenta(Long ventaId, BigDecimal subtotal, BigDecimal descuento, BigDecimal impuestos, BigDecimal total, String estado);
 
     // --- Consulta ---

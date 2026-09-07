@@ -13,6 +13,10 @@ spring:
       hibernate:
         proc:
           param_null_passing: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 # JWT Configuration
 jwt:
@@ -41,3 +45,11 @@ decolecta:
   base-url: ${DECOLECTA_BASE_URL:https://api.decolecta.com/v1}
   token: ${DECOLECTA_TOKEN:sk_3893.TKjkyKhUYJ16KK9bqSbyD6e4URMaDVSS}
   timeout-ms: 10000
+
+# Almacenamiento de imágenes de productos (Cloudflare R2, S3-compatible)
+r2:
+  endpoint: ${R2_ENDPOINT:https://10deafc1f7179960377fd8f9b42e0ed3.r2.cloudflarestorage.com}
+  access-key: ${R2_ACCESS_KEY:a4a5ed316c97d21baf8360963aa68cae}
+  secret-key: ${R2_SECRET_KEY:efa1f306095800bbc92c4a3f59e5e05c3449d35056e3dd2eea5c8c66278be1ab}
+  bucket: ${R2_BUCKET:ssimple-fact-storage}
+  public-base-url: ${R2_PUBLIC_BASE_URL:https://pub-bdcbb1e15ab14bdd9b7debbaea9c344c.r2.dev}

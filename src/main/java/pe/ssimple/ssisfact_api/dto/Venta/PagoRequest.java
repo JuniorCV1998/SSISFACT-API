@@ -19,6 +19,11 @@ public class PagoRequest {
     @DecimalMin(value = "0.01", message = "debe ser mayor a 0")
     private BigDecimal monto;
 
+    // Opcional: cuánto entregó físicamente el cliente (normalmente en EFECTIVO), si
+    // es mayor a "monto" implica vuelto. Si no se envía, se asume que no hay vuelto.
+    @DecimalMin(value = "0.01", message = "debe ser mayor a 0")
+    private BigDecimal montoRecibido;
+
     @Size(max = 100, message = "no puede superar los 100 caracteres")
     @SafeText
     private String referencia;

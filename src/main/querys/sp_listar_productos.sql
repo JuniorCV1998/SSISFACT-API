@@ -46,7 +46,13 @@ sp_listar_productos: BEGIN
         CASE WHEN p_mostrar_costo = 1 THEN p.costo ELSE NULL END AS costo,
         p.stock_minimo,
         p.afecto_impuesto,
-        COALESCE(SUM(i.stock), 0) AS stock_total,
+        -- Siempre la suma de TODAS las sucursales, sin importar el filtro.
+        COALESCE((SELECT SUM(i.stock) FROM inventarios i WHERE i.producto_id = p.id), 0) AS stock_total,
+        -- Solo se calcula si se manda p_sucursal_id; NULL si no se filtra.
+        CASE WHEN p_sucursal_id IS NULL THEN NULL
+             ELSE COALESCE((SELECT SUM(i2.stock) FROM inventarios i2
+                             WHERE i2.producto_id = p.id AND i2.sucursal_id = p_sucursal_id), 0)
+        END AS stock_sucursal,
         p.imagen_url,
         p.estado,
         p.fecha_creacion,
@@ -55,9 +61,6 @@ sp_listar_productos: BEGIN
     FROM productos p
     INNER JOIN categorias c
         ON c.id = p.categoria_id
-    LEFT JOIN inventarios i
-        ON i.producto_id = p.id
-        AND (p_sucursal_id IS NULL OR i.sucursal_id = p_sucursal_id)
     WHERE p.empresa_id = p_empresa_id
     AND p.estado <> -1  -- ← EXCLUIR ELIMINADOS
     AND (
@@ -72,23 +75,6 @@ sp_listar_productos: BEGIN
         OR p.codigo_barras LIKE CONCAT('%', p_busqueda, '%')
         OR c.nombre LIKE CONCAT('%', p_busqueda, '%')
     )
-    GROUP BY
-        p.id,
-        p.empresa_id,
-        p.categoria_id,
-        c.nombre,
-        p.codigo,
-        p.codigo_barras,
-        p.nombre,
-        p.descripcion,
-        p.precio,
-        p.costo,
-        p.stock_minimo,
-        p.afecto_impuesto,
-        p.imagen_url,
-        p.estado,
-        p.fecha_creacion,
-        p.fecha_actualizacion
     ORDER BY p.nombre ASC
     LIMIT p_size OFFSET v_offset;
 
@@ -124,15 +110,15 @@ sp_listar_productos: BEGIN
             1  = Incluye el costo real (admin/almacén)
             0  = Costo es NULL (vendedores/clientes)
         p_sucursal_id
-            NULL = stock_total es la suma de TODAS las sucursales (comportamiento
-                   original, usado en la administración general de productos).
-            valor = stock_total queda acotado al stock de ESA sucursal únicamente
-                   (usado en el Punto de Venta, para no mostrar stock que en
-                   realidad no está disponible donde se está vendiendo).
+            NULL  = stock_sucursal viene NULL, no se filtra nada.
+            valor = stock_sucursal trae el stock de ESA sucursal (0 si nunca
+                   tuvo movimiento ahí), usado en el Punto de Venta y en el
+                   selector de sucursal, sin afectar stock_total.
     Retorna:
         - Datos del producto
         - Categoría
-        - Stock total (global o por sucursal según p_sucursal_id)
+        - stock_total: SIEMPRE la suma de todas las sucursales (no cambia con p_sucursal_id)
+        - stock_sucursal: stock de la sucursal filtrada, o NULL si no se filtró
         - Total de registros
     Estados de producto:
         1 = Activo (disponible)

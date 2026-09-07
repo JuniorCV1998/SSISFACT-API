@@ -16,6 +16,7 @@ import pe.ssimple.ssisfact_api.dto.Venta.VentaDetalleResponse;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaItemDetalleResponse;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaListItemResponse;
 import pe.ssimple.ssisfact_api.repository.VentaRepository;
+import pe.ssimple.ssisfact_api.util.ComprobanteCodigoUtil;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -104,16 +105,16 @@ public class VentaRepositoryImpl implements VentaRepository {
     }
 
     @Override
-    public ComprobanteNumeroResult generarNumeroComprobante(Long empresaId, String tipo) {
+    public ComprobanteNumeroResult generarNumeroComprobante(Long empresaId, Long sucursalId, String tipo) {
 
         return jdbcTemplate.queryForObject(
-                "CALL sp_generar_numero_comprobante(?,?)",
+                "CALL sp_generar_numero_comprobante(?,?,?)",
                 (rs, rowNum) -> new ComprobanteNumeroResult(
                         rs.getString("estado"),
                         rs.getString("mensaje"),
                         rs.getString("serie"),
                         (Integer) rs.getObject("numero")),
-                empresaId, tipo);
+                empresaId, sucursalId, tipo);
     }
 
     @Override
@@ -151,11 +152,11 @@ public class VentaRepositoryImpl implements VentaRepository {
     }
 
     @Override
-    public void insertarPago(Long ventaId, String metodo, BigDecimal monto, String referencia) {
+    public void insertarPago(Long ventaId, String metodo, BigDecimal monto, BigDecimal montoRecibido, String referencia) {
 
         jdbcTemplate.update(
-                "INSERT INTO pagos (venta_id, metodo, monto, referencia, fecha) VALUES (?,?,?,?,NOW())",
-                ventaId, metodo, monto, referencia);
+                "INSERT INTO pagos (venta_id, metodo, monto, monto_recibido, referencia, fecha) VALUES (?,?,?,?,?,NOW())",
+                ventaId, metodo, monto, montoRecibido, referencia);
     }
 
     @Override
@@ -191,7 +192,9 @@ public class VentaRepositoryImpl implements VentaRepository {
                     if (fecha != null) item.setFecha(fecha.toLocalDateTime());
                     item.setComprobanteTipo(rs.getString("comprobante_tipo"));
                     item.setComprobanteSerie(rs.getString("comprobante_serie"));
-                    item.setComprobanteNumero((Integer) rs.getObject("comprobante_numero"));
+                    Integer comprobanteNumero = (Integer) rs.getObject("comprobante_numero");
+                    item.setComprobanteNumero(comprobanteNumero);
+                    item.setComprobanteCodigo(ComprobanteCodigoUtil.formatear(item.getComprobanteSerie(), comprobanteNumero));
                     item.setTotalRegistros(rs.getInt("total_registros"));
                     return item;
                 },
@@ -207,6 +210,9 @@ public class VentaRepositoryImpl implements VentaRepository {
                     VentaDetalleResponse cabecera = new VentaDetalleResponse();
                     cabecera.setId(rs.getLong("id"));
                     cabecera.setEmpresaId(rs.getLong("empresa_id"));
+                    cabecera.setEmpresaNombre(rs.getString("empresa_nombre"));
+                    cabecera.setEmpresaRuc(rs.getString("empresa_ruc"));
+                    cabecera.setEmpresaDireccion(rs.getString("empresa_direccion"));
                     cabecera.setSucursalId(rs.getLong("sucursal_id"));
                     cabecera.setSucursalNombre(rs.getString("sucursal_nombre"));
                     cabecera.setClienteId(rs.getLong("cliente_id"));
@@ -239,7 +245,9 @@ public class VentaRepositoryImpl implements VentaRepository {
     public List<VentaItemDetalleResponse> listarItemsVenta(Long ventaId) {
 
         return jdbcTemplate.query(
-                "SELECT dv.id, dv.producto_id, p.nombre AS producto_nombre, dv.cantidad, dv.precio_unitario, dv.descuento, dv.subtotal " +
+                "SELECT dv.id, dv.producto_id, p.nombre AS producto_nombre, " +
+                        "COALESCE(NULLIF(p.codigo_barras, ''), p.codigo) AS producto_codigo, " +
+                        "dv.cantidad, dv.precio_unitario, dv.descuento, dv.subtotal " +
                         "FROM detalle_venta dv " +
                         "INNER JOIN productos p ON p.id = dv.producto_id " +
                         "WHERE dv.venta_id = ? " +
@@ -248,6 +256,7 @@ public class VentaRepositoryImpl implements VentaRepository {
                     VentaItemDetalleResponse item = new VentaItemDetalleResponse();
                     item.setId(rs.getLong("id"));
                     item.setProductoId(rs.getLong("producto_id"));
+                    item.setProductoCodigo(rs.getString("producto_codigo"));
                     item.setProductoNombre(rs.getString("producto_nombre"));
                     item.setCantidad(rs.getBigDecimal("cantidad"));
                     item.setPrecioUnitario(rs.getBigDecimal("precio_unitario"));
@@ -262,12 +271,15 @@ public class VentaRepositoryImpl implements VentaRepository {
     public List<PagoResponse> listarPagosVenta(Long ventaId) {
 
         return jdbcTemplate.query(
-                "SELECT id, metodo, monto, referencia, fecha FROM pagos WHERE venta_id = ? ORDER BY id ASC",
+                "SELECT id, metodo, monto, monto_recibido, referencia, fecha FROM pagos WHERE venta_id = ? ORDER BY id ASC",
                 (rs, rowNum) -> {
                     PagoResponse pago = new PagoResponse();
                     pago.setId(rs.getLong("id"));
                     pago.setMetodo(rs.getString("metodo"));
                     pago.setMonto(rs.getBigDecimal("monto"));
+                    BigDecimal montoRecibido = rs.getBigDecimal("monto_recibido");
+                    pago.setMontoRecibido(montoRecibido);
+                    pago.setVuelto(montoRecibido != null ? montoRecibido.subtract(pago.getMonto()) : null);
                     pago.setReferencia(rs.getString("referencia"));
                     Timestamp fecha = rs.getTimestamp("fecha");
                     if (fecha != null) pago.setFecha(fecha.toLocalDateTime());

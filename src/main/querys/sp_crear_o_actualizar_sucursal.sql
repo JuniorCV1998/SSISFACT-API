@@ -12,9 +12,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_crear_o_actualizar_sucursal`(
 )
 sp_crear_o_actualizar_sucursal: BEGIN
 
-    DECLARE v_sucursal_id   BIGINT;
-    DECLARE v_total_vivas   INT;
-    DECLARE v_max_sucursal  INT;
+    DECLARE v_sucursal_id     BIGINT;
+    DECLARE v_total_vivas     INT;
+    DECLARE v_max_sucursal    INT;
+    DECLARE v_siguiente_serie INT;
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
@@ -106,6 +107,17 @@ sp_crear_o_actualizar_sucursal: BEGIN
         VALUES (p_empresa_id, TRIM(p_nombre), TRIM(p_direccion), TRIM(p_telefono), COALESCE(p_estado, 1), NOW());
 
         SET v_sucursal_id = LAST_INSERT_ID();
+
+        -- Serie NOTA_PEDIDO propia para esta sucursal (NP01, NP02... según
+        -- cuántas series de este tipo ya tiene la empresa).
+        SELECT COALESCE(MAX(CAST(SUBSTRING(serie, 3) AS UNSIGNED)), 0) + 1
+        INTO v_siguiente_serie
+        FROM series
+        WHERE empresa_id = p_empresa_id AND tipo = 'NOTA_PEDIDO' AND serie REGEXP '^NP[0-9]+$';
+
+        INSERT INTO series (empresa_id, sucursal_id, tipo, serie, correlativo_actual, es_principal, estado)
+        VALUES (p_empresa_id, v_sucursal_id, 'NOTA_PEDIDO', CONCAT('NP', LPAD(v_siguiente_serie, 2, '0')), 0, 1, 1);
+
         COMMIT;
 
         SELECT 'OK' AS estado, CONCAT('Sucursal ', p_nombre, ' registrada correctamente') AS mensaje, v_sucursal_id AS id;

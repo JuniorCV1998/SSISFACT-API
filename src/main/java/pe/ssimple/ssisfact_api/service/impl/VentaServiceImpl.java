@@ -20,6 +20,8 @@ import pe.ssimple.ssisfact_api.dto.Venta.VentaResponse;
 import pe.ssimple.ssisfact_api.exception.VentaValidationException;
 import pe.ssimple.ssisfact_api.repository.VentaRepository;
 import pe.ssimple.ssisfact_api.service.VentaService;
+import pe.ssimple.ssisfact_api.util.ComprobanteCodigoUtil;
+import pe.ssimple.ssisfact_api.util.NumeroALetrasUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,7 +33,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class VentaServiceImpl implements VentaService {
 
-    private static final Set<String> TIPOS_DOCUMENTO = Set.of("BOLETA", "GUIA");
+    // NOTA_PEDIDO: documento interno, sin valor tributario, mientras no exista
+    // facturación electrónica SUNAT. BOLETA/GUIA quedan reservados para cuando se active.
+    private static final Set<String> TIPOS_DOCUMENTO = Set.of("BOLETA", "GUIA", "NOTA_PEDIDO");
     private static final Set<String> METODOS_PAGO = Set.of("EFECTIVO", "YAPE", "PLIN", "TRANSFERENCIA", "TARJETA");
     private static final int MAX_PAGOS_POR_VENTA = 3;
 
@@ -43,7 +47,7 @@ public class VentaServiceImpl implements VentaService {
 
         String tipoDocumento = request.getTipoDocumento().trim().toUpperCase();
         if (!TIPOS_DOCUMENTO.contains(tipoDocumento)) {
-            throw new VentaValidationException("El tipo de documento debe ser BOLETA o GUIA");
+            throw new VentaValidationException("El tipo de documento debe ser BOLETA, GUIA o NOTA_PEDIDO");
         }
 
         // 1. Cabecera: valida caja abierta y resuelve el cliente (o el genérico)
@@ -115,7 +119,7 @@ public class VentaServiceImpl implements VentaService {
         }
 
         // 4. Comprobante (numeración de la serie principal de la empresa para ese tipo)
-        ComprobanteNumeroResult numeroComprobante = ventaRepository.generarNumeroComprobante(empresaId, tipoDocumento);
+        ComprobanteNumeroResult numeroComprobante = ventaRepository.generarNumeroComprobante(empresaId, request.getSucursalId(), tipoDocumento);
         if (!"OK".equals(numeroComprobante.getEstado())) {
             throw new VentaValidationException(numeroComprobante.getMensaje());
         }
@@ -143,6 +147,10 @@ public class VentaServiceImpl implements VentaService {
                 if (!METODOS_PAGO.contains(metodo)) {
                     throw new VentaValidationException("Método de pago inválido: " + pago.getMetodo());
                 }
+                if (pago.getMontoRecibido() != null && pago.getMontoRecibido().compareTo(pago.getMonto()) < 0) {
+                    throw new VentaValidationException(
+                            "El monto recibido (" + pago.getMontoRecibido() + ") no puede ser menor al monto del pago (" + pago.getMonto() + ")");
+                }
                 totalPagado = totalPagado.add(pago.getMonto());
             }
 
@@ -152,7 +160,8 @@ public class VentaServiceImpl implements VentaService {
             }
 
             for (PagoRequest pago : pagos) {
-                ventaRepository.insertarPago(ventaId, pago.getMetodo().trim().toUpperCase(), pago.getMonto(), pago.getReferencia());
+                ventaRepository.insertarPago(ventaId, pago.getMetodo().trim().toUpperCase(),
+                        pago.getMonto(), pago.getMontoRecibido(), pago.getReferencia());
             }
         }
 
@@ -163,7 +172,9 @@ public class VentaServiceImpl implements VentaService {
                 ventaId, empresaId, request.getSucursalId(), total, estadoVenta);
 
         return new VentaResponse(ventaId, estadoVenta, tipoDocumento,
-                numeroComprobante.getSerie(), numeroComprobante.getNumero(), subtotal, descuento, impuestos, total);
+                numeroComprobante.getSerie(), numeroComprobante.getNumero(),
+                ComprobanteCodigoUtil.formatear(numeroComprobante.getSerie(), numeroComprobante.getNumero()),
+                subtotal, descuento, impuestos, total);
     }
 
     @Override
@@ -186,10 +197,35 @@ public class VentaServiceImpl implements VentaService {
             throw new VentaValidationException("La venta no existe");
         }
 
-        cabecera.setItems(ventaRepository.listarItemsVenta(ventaId));
+        List<VentaItemDetalleResponse> items = ventaRepository.listarItemsVenta(ventaId);
+        cabecera.setItems(items);
         cabecera.setPagos(ventaRepository.listarPagosVenta(ventaId));
 
+        cabecera.setTotalUnidades(items.stream()
+                .map(VentaItemDetalleResponse::getCantidad)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        cabecera.setMontoEnLetras(NumeroALetrasUtil.convertir(cabecera.getTotal()));
+        cabecera.setDocumentoTitulo(tituloDocumento(cabecera.getComprobanteTipo()));
+        cabecera.setComprobanteCodigo(ComprobanteCodigoUtil.formatear(cabecera.getComprobanteSerie(), cabecera.getComprobanteNumero()));
+
         return cabecera;
+    }
+
+    // Título honesto para imprimir según el tipo real de comprobante. BOLETA/FACTURA/etc.
+    // solo deberían implicar "electrónica" el día que exista declaración real ante SUNAT;
+    // hasta entonces, el único tipo realmente en uso es NOTA_PEDIDO.
+    private String tituloDocumento(String comprobanteTipo) {
+        if (comprobanteTipo == null) {
+            return "NOTA DE PEDIDO";
+        }
+        return switch (comprobanteTipo) {
+            case "BOLETA" -> "BOLETA DE VENTA ELECTRÓNICA";
+            case "FACTURA" -> "FACTURA ELECTRÓNICA";
+            case "GUIA" -> "GUÍA DE REMISIÓN ELECTRÓNICA";
+            case "NOTA_CREDITO" -> "NOTA DE CRÉDITO ELECTRÓNICA";
+            case "NOTA_DEBITO" -> "NOTA DE DÉBITO ELECTRÓNICA";
+            default -> "NOTA DE PEDIDO";
+        };
     }
 
     @Override
@@ -230,6 +266,6 @@ public class VentaServiceImpl implements VentaService {
 
         log.info("[anularVenta] venta anulada — id={} empresaId={}", ventaId, empresaId);
 
-        return new VentaResponse(ventaId, "ANULADA", null, null, null, null, null, null, null);
+        return new VentaResponse(ventaId, "ANULADA", null, null, null, null, null, null, null, null);
     }
 }

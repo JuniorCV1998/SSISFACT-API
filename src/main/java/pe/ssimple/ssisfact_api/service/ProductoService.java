@@ -1,9 +1,13 @@
 package pe.ssimple.ssisfact_api.service;
 
+import pe.ssimple.ssisfact_api.dto.Producto.EtiquetaProductoResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoCatalogoListResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoListResponse;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoRequest;
 import pe.ssimple.ssisfact_api.dto.Producto.ProductoResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface ProductoService {
     ProductoResponse guardarProducto(ProductoRequest request);
@@ -12,4 +16,6 @@ public interface ProductoService {
     ProductoResponse activarProducto(Long productoId, Long empresaId);
     ProductoResponse desactivarProducto(Long productoId, Long empresaId);
     ProductoResponse eliminarProducto(Long productoId, Long empresaId);
+    List<EtiquetaProductoResponse> obtenerParaEtiquetas(List<Long> productoIds, Long empresaId);
+    ProductoResponse actualizarImagen(Long productoId, Long empresaId, MultipartFile file);
 }

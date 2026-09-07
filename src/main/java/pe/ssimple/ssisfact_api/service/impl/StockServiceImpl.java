@@ -18,8 +18,10 @@ public class StockServiceImpl implements StockService {
     @Override
     public StockResponse ingresarStock(StockRequest request) {
 
-        // NORMALIZAR MOTIVO Y TIPO
-        request.setMotivo(request.getMotivo().trim());
+        // NORMALIZAR MOTIVO Y TIPO (motivo es opcional)
+        if (request.getMotivo() != null) {
+            request.setMotivo(request.getMotivo().trim());
+        }
         request.setTipo(request.getTipo().trim().toUpperCase());
 
         return stockRepository.ingresarStock(request);
@@ -28,8 +30,10 @@ public class StockServiceImpl implements StockService {
     @Override
     public StockRetirarResponse retirarStock(StockRetirarRequest request) {
 
-        // NORMALIZAR MOTIVO Y TIPO
-        request.setMotivo(request.getMotivo().trim());
+        // NORMALIZAR MOTIVO Y TIPO (motivo es opcional)
+        if (request.getMotivo() != null) {
+            request.setMotivo(request.getMotivo().trim());
+        }
         request.setTipo(request.getTipo().trim().toUpperCase());
 
         return stockRepository.retirarStock(request);
