@@ -74,20 +74,20 @@ BEGIN
                 ROLLBACK;
                 SELECT 'ERROR_CORREO_EMPRESA' AS estado, 'El correo de empresa ya fue registrado' AS mensaje, 0 AS id;
 
-            ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = v_documento) THEN
+            ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = v_documento OR email = v_documento) THEN
+                ROLLBACK;
                 SELECT 'ERROR_DOCUMENTO_EXISTE' AS estado, 'El número de documento ya está registrado' AS mensaje, 0 AS id;
 
-            ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = v_email_admin) THEN
+            ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = v_email_admin OR documento = v_email_admin) THEN
                 ROLLBACK;
                 SELECT 'ERROR_CORREO_ADMIN' AS estado, 'El correo del administrador ya fue registrado' AS mensaje, 0 AS id;
-
-            ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = v_documento) THEN
-                ROLLBACK;
-                SELECT 'ERROR_DOCUMENTO' AS estado, 'El documento ya fue registrado' AS mensaje, 0 AS id;
 
             ELSE
 
                 -- INSERT EMPRESA
+                -- estado=2 (pendiente): la empresa no puede operar hasta que un
+                -- SUPERADMIN la revise y la pase a 1 (activa) vía
+                -- POST /admin/empresas/{id}/estado.
                 INSERT INTO empresas (nombre, ruc, direccion, telefono, email, estado, fecha_creacion)
                 VALUES (v_razon_social, v_ruc, v_direccion, v_telefono, v_email_empresa, 2, NOW());
 
@@ -183,10 +183,10 @@ BEGIN
         ELSEIF EXISTS (SELECT 1 FROM empresas WHERE email = p_email_empresa) THEN
             SELECT 'ERROR_CORREO_EMPRESA' AS estado, 'El correo de empresa ya está registrado' AS mensaje, 0 AS id;
 
-        ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = p_documento) THEN
+        ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = p_documento OR email = p_documento) THEN
             SELECT 'ERROR_DOCUMENTO_EXISTE' AS estado, 'El número de documento ya está registrado' AS mensaje, 0 AS id;
 
-        ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = p_email_admin) THEN
+        ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = p_email_admin OR documento = p_email_admin) THEN
             SELECT 'ERROR_CORREO_ADMIN' AS estado, 'El correo del administrador ya está registrado' AS mensaje, 0 AS id;
 
         ELSE

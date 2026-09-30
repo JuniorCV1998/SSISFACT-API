@@ -41,4 +41,19 @@ public class UsuarioEmpresaServiceImpl implements UsuarioEmpresaService {
     public AdminSaveResponse asignarRol(Long usuarioId, Long empresaId, String rol) {
         return usuarioEmpresaRepository.asignarRol(usuarioId, empresaId, rol.trim().toUpperCase());
     }
+
+    @Override
+    public AdminSaveResponse activarUsuario(Long usuarioId, Long empresaId) {
+        return usuarioEmpresaRepository.activarUsuario(usuarioId, empresaId);
+    }
+
+    @Override
+    public AdminSaveResponse desactivarUsuario(Long usuarioId, Long empresaId, Long actorUsuarioId) {
+
+        if (usuarioId.equals(actorUsuarioId)) {
+            return new AdminSaveResponse("ERROR_AUTO_DESACTIVAR", "No puedes desactivar tu propia cuenta", 0L);
+        }
+
+        return usuarioEmpresaRepository.desactivarUsuario(usuarioId, empresaId);
+    }
 }

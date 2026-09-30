@@ -188,12 +188,11 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     @Override
     public String obtenerImagenUrlActual(Long productoId, Long empresaId) {
 
-        return jdbcTemplate.query(
-                        "SELECT imagen_url FROM productos WHERE id = ? AND empresa_id = ?",
-                        (rs, rowNum) -> rs.getString("imagen_url"),
-                        productoId, empresaId)
-                .stream()
-                .findFirst()
-                .orElse(null);
+        List<String> resultado = jdbcTemplate.query(
+                "SELECT imagen_url FROM productos WHERE id = ? AND empresa_id = ?",
+                (rs, rowNum) -> rs.getString("imagen_url"),
+                productoId, empresaId);
+
+        return resultado.isEmpty() ? null : resultado.get(0);
     }
 }

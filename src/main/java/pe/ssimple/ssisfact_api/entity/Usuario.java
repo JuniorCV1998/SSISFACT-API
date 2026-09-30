@@ -20,6 +20,9 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "nombre", length = 150)
+    private String nombre;
+
     @Column(name = "email", length = 255)
     private String email;
 
@@ -34,6 +37,9 @@ public class Usuario {
 
     @Column(name = "sucursal_id")
     private Long sucursalId;
+
+    @Column(name = "estado")
+    private Integer estado;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

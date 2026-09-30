@@ -46,6 +46,22 @@ decolecta:
   token: ${DECOLECTA_TOKEN:sk_3893.TKjkyKhUYJ16KK9bqSbyD6e4URMaDVSS}
   timeout-ms: 10000
 
+# Asistente IA "Fact" — Anthropic Claude (Messages API, tool use)
+anthropic:
+  base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com/v1}
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+  timeout-ms: 30000
+
+assistant:
+  max-tool-roundtrips: 5
+  rate-limit:
+    messages-per-minute: 30
+  memory:
+    cache-ttl-seconds: 300
+  cart:
+    inactivity-timeout-minutes: 10
+
 # Almacenamiento de imágenes de productos (Cloudflare R2, S3-compatible)
 r2:
   endpoint: ${R2_ENDPOINT:https://10deafc1f7179960377fd8f9b42e0ed3.r2.cloudflarestorage.com}

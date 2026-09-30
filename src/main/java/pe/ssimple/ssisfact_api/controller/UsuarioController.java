@@ -70,4 +70,24 @@ public class UsuarioController {
 
         return ResponseBuilder.build(response, "OK");
     }
+
+    @PostMapping("/{id}/activar")
+    public ResponseEntity<ApiResponse<AdminSaveResponse>> activarUsuario(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        AdminSaveResponse response = usuarioService.activarUsuario(id, user.getEmpresaId());
+
+        return ResponseBuilder.build(response, "OK");
+    }
+
+    @PostMapping("/{id}/desactivar")
+    public ResponseEntity<ApiResponse<AdminSaveResponse>> desactivarUsuario(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        AdminSaveResponse response = usuarioService.desactivarUsuario(id, user.getEmpresaId(), user.getUsuarioId());
+
+        return ResponseBuilder.build(response, "OK");
+    }
 }

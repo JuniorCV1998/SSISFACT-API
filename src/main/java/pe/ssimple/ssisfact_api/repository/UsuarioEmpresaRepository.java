@@ -13,4 +13,6 @@ public interface UsuarioEmpresaRepository {
     AdminSaveResponse crearUsuario(Long empresaId, String nombre, String email, String documento,
                                     String contrasenaHash, String rol, Long sucursalId);
     AdminSaveResponse asignarRol(Long usuarioId, Long empresaId, String rol);
+    AdminSaveResponse activarUsuario(Long usuarioId, Long empresaId);
+    AdminSaveResponse desactivarUsuario(Long usuarioId, Long empresaId);
 }

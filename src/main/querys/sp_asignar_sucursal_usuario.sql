@@ -9,6 +9,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_asignar_sucursal_usuario`(
 )
 BEGIN
 
+    DECLARE v_rol_actual_tipo VARCHAR(10);
+
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -22,6 +24,20 @@ BEGIN
     ) THEN
         ROLLBACK;
         SELECT 'ERROR_USUARIO' AS estado, 'El usuario no existe o no pertenece a esa empresa' AS mensaje, 0 AS id;
+
+    ELSE
+
+    SELECT r.tipo INTO v_rol_actual_tipo
+    FROM usuario_roles ur
+    INNER JOIN roles r ON r.id = ur.rol_id
+    WHERE ur.usuario_id = p_usuario_id
+    LIMIT 1;
+
+    IF v_rol_actual_tipo IS NOT NULL AND v_rol_actual_tipo <> 'USER' THEN
+        ROLLBACK;
+        SELECT 'ERROR_ES_ADMIN' AS estado,
+               'El administrador no puede tener una sucursal asignada, opera libremente en todas' AS mensaje,
+               0 AS id;
 
     ELSEIF p_sucursal_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM sucursales WHERE id = p_sucursal_id AND empresa_id = p_empresa_id AND estado = 1
@@ -37,18 +53,20 @@ BEGIN
 
     END IF;
 
+    END IF;
+
     /*
     ===============================================================================
     Nombre:
         sp_asignar_sucursal_usuario
     Descripción:
         Asigna (o quita, si p_sucursal_id es NULL) la sucursal fija de un
-        trabajador de la empresa. Un usuario con ROLE_ADMIN no depende de este
-        campo (queda libre de operar en cualquier sucursal vía SucursalAccessGuard
+        trabajador de la empresa. Un usuario con ROLE_ADMIN nunca puede tener
+        sucursal asignada — opera libremente en todas (ver SucursalAccessGuard
         en el backend); para el resto de roles, este valor es el que limita en
         qué sucursal pueden abrir caja / vender / manejar stock.
     Estados posibles:
-        OK, ERROR_USUARIO, ERROR_SUCURSAL
+        OK, ERROR_USUARIO, ERROR_ES_ADMIN, ERROR_SUCURSAL
     ===============================================================================
     */
 

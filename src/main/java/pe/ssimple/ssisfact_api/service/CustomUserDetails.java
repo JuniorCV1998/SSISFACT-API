@@ -23,12 +23,20 @@ public class CustomUserDetails implements UserDetails {
         return usuario.getId();
     }
 
+    public String getNombre() {
+        return usuario.getNombre();
+    }
+
     public Long getEmpresaId() {
         return usuario.getEmpresaId();
     }
 
     public Long getSucursalId() {
         return usuario.getSucursalId();
+    }
+
+    public Integer getEstado() {
+        return usuario.getEstado();
     }
 
     @Override

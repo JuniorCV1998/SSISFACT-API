@@ -202,6 +202,17 @@ public class VentaRepositoryImpl implements VentaRepository {
     }
 
     @Override
+    public Long buscarVentaIdPorComprobante(Long empresaId, String serie, Integer numero) {
+
+        List<Long> resultado = jdbcTemplate.query(
+                "SELECT venta_id FROM comprobantes WHERE empresa_id = ? AND serie = ? AND numero = ?",
+                (rs, rowNum) -> rs.getLong("venta_id"),
+                empresaId, serie, numero);
+
+        return resultado.isEmpty() ? null : resultado.get(0);
+    }
+
+    @Override
     public VentaDetalleResponse obtenerVentaCabecera(Long ventaId, Long empresaId) {
 
         List<VentaDetalleResponse> resultado = jdbcTemplate.query(
@@ -213,6 +224,8 @@ public class VentaRepositoryImpl implements VentaRepository {
                     cabecera.setEmpresaNombre(rs.getString("empresa_nombre"));
                     cabecera.setEmpresaRuc(rs.getString("empresa_ruc"));
                     cabecera.setEmpresaDireccion(rs.getString("empresa_direccion"));
+                    cabecera.setEmpresaLogoUrl(rs.getString("empresa_logo_url"));
+                    cabecera.setTicketMensajePie(rs.getString("ticket_mensaje_pie"));
                     cabecera.setSucursalId(rs.getLong("sucursal_id"));
                     cabecera.setSucursalNombre(rs.getString("sucursal_nombre"));
                     cabecera.setClienteId(rs.getLong("cliente_id"));

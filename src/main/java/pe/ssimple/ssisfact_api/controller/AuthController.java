@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
 import pe.ssimple.ssisfact_api.dto.Auth.LoginRequest;
 import pe.ssimple.ssisfact_api.dto.Auth.LoginResponse;
+import pe.ssimple.ssisfact_api.exception.EmpresaInactivaException;
+import pe.ssimple.ssisfact_api.exception.UsuarioInactivoException;
+import pe.ssimple.ssisfact_api.repository.EmpresaRepository;
 import pe.ssimple.ssisfact_api.service.CustomUserDetails;
 import pe.ssimple.ssisfact_api.service.JwtService;
 import pe.ssimple.ssisfact_api.service.TokenBlacklistService;
@@ -33,6 +36,7 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final EmpresaRepository empresaRepository;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest credentials) {
@@ -45,9 +49,28 @@ public class AuthController {
 
         CustomUserDetails user = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
+        // A diferencia del estado de la empresa, esto SÍ aplica también a ROLE_SUPERADMIN:
+        // es el propio admin de esa empresa (o un superadmin) quien desactiva la cuenta.
+        Integer usuarioEstado = user.getEstado();
+        if (usuarioEstado != null && usuarioEstado == 0) {
+            throw new UsuarioInactivoException("Tu cuenta fue desactivada. Contacta a tu administrador.");
+        }
+
         List<String> roles = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();
+
+        // El superadmin de la plataforma no depende del estado de "su" empresa
+        // (la empresa fantasma de la plataforma) para poder operar.
+        if (!roles.contains("ROLE_SUPERADMIN")) {
+            Integer empresaEstado = empresaRepository.obtenerEstado(user.getEmpresaId());
+            if (empresaEstado == null || empresaEstado == 0) {
+                throw new EmpresaInactivaException("Tu empresa está suspendida. Contacta a soporte.");
+            }
+            if (empresaEstado == 2) {
+                throw new EmpresaInactivaException("Tu empresa está pendiente de aprobación.");
+            }
+        }
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("usuarioId", user.getUsuarioId());

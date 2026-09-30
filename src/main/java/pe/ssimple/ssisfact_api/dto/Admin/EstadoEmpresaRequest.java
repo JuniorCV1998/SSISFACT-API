@@ -7,5 +7,5 @@ import lombok.Data;
 public class EstadoEmpresaRequest {
 
     @NotNull(message = "es obligatorio")
-    private Integer estado; // 0=eliminada, 1=activa, 2=pendiente/suspendida
+    private Integer estado; // 0=suspendida, 1=activa, 2=pendiente (nace así toda empresa nueva)
 }

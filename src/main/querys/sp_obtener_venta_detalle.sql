@@ -19,6 +19,8 @@ BEGIN
         e.nombre AS empresa_nombre,
         e.ruc AS empresa_ruc,
         e.direccion AS empresa_direccion,
+        e.logo_url AS empresa_logo_url,
+        ce.ticket_mensaje_pie,
         v.sucursal_id,
         s.nombre AS sucursal_nombre,
         v.cliente_id,
@@ -40,6 +42,7 @@ BEGIN
         cp.numero AS comprobante_numero
     FROM ventas v
     INNER JOIN empresas e ON e.id = v.empresa_id
+    LEFT JOIN configuracion_empresa ce ON ce.empresa_id = e.id
     INNER JOIN sucursales s ON s.id = v.sucursal_id
     INNER JOIN clientes c ON c.id = v.cliente_id
     INNER JOIN usuarios u ON u.id = v.usuario_id

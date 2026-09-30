@@ -35,7 +35,7 @@ BEGIN
 
     ELSEIF p_estado NOT IN (0, 1, 2) THEN
         ROLLBACK;
-        SELECT 'ERROR_ESTADO' AS estado, 'Estado inválido. Valores permitidos: 0 (eliminada), 1 (activa), 2 (pendiente)' AS mensaje, 0 AS id;
+        SELECT 'ERROR_ESTADO' AS estado, 'Estado inválido. Valores permitidos: 0 (suspendida), 1 (activa), 2 (pendiente)' AS mensaje, 0 AS id;
 
     ELSEIF v_estado_actual = p_estado THEN
         ROLLBACK;
@@ -56,8 +56,12 @@ BEGIN
     Nombre:
         sp_actualizar_estado_empresa
     Descripción:
-        Panel superadmin: activa (1), suspende/marca pendiente (2) o elimina (0)
-        una empresa. Protegida contra tocar la empresa fantasma de la plataforma.
+        Panel superadmin: activa (1), suspende (0) o marca pendiente de revisión
+        (2) una empresa. Protegida contra tocar la empresa fantasma de la
+        plataforma. Toda empresa nueva nace en 2 (pendiente) — no puede operar
+        hasta que un SUPERADMIN la revise y la pase a 1.
+        Al pasar a 0 o 2, el login de los usuarios de esa empresa queda
+        bloqueado (ver AuthController.login), excepto para ROLE_SUPERADMIN.
     Estados posibles:
         OK, ERROR, ERROR_NO_EXISTE, ERROR_EMPRESA_PLATAFORMA, ERROR_ESTADO, ERROR_MISMO_ESTADO
     ===============================================================================

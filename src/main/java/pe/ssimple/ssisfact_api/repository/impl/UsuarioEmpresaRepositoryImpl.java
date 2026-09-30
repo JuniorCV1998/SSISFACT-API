@@ -76,4 +76,28 @@ public class UsuarioEmpresaRepositoryImpl implements UsuarioEmpresaRepository {
                         rs.getLong("id")),
                 usuarioId, empresaId, rol);
     }
+
+    @Override
+    public AdminSaveResponse activarUsuario(Long usuarioId, Long empresaId) {
+
+        return jdbcTemplate.queryForObject(
+                "CALL sp_activar_usuario(?,?)",
+                (rs, rowNum) -> new AdminSaveResponse(
+                        rs.getString("estado"),
+                        rs.getString("mensaje"),
+                        rs.getLong("id")),
+                usuarioId, empresaId);
+    }
+
+    @Override
+    public AdminSaveResponse desactivarUsuario(Long usuarioId, Long empresaId) {
+
+        return jdbcTemplate.queryForObject(
+                "CALL sp_desactivar_usuario(?,?)",
+                (rs, rowNum) -> new AdminSaveResponse(
+                        rs.getString("estado"),
+                        rs.getString("mensaje"),
+                        rs.getLong("id")),
+                usuarioId, empresaId);
+    }
 }

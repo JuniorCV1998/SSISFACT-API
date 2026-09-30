@@ -15,6 +15,10 @@ public class VentaDetalleResponse {
     private String empresaNombre;
     private String empresaRuc;
     private String empresaDireccion;
+    private String empresaLogoUrl;
+    // Mensaje libre de pie del ticket configurado en Configuración. Puede venir
+    // vacío/null si el admin no configuró uno — el ticket cae a su texto fijo actual.
+    private String ticketMensajePie;
     private Long sucursalId;
     private String sucursalNombre;
     private Long clienteId;

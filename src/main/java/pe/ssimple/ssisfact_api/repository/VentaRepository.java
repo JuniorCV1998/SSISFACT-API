@@ -34,6 +34,9 @@ public interface VentaRepository {
     // --- Consulta ---
     List<VentaListItemResponse> listarVentas(Long empresaId, Long sucursalId, Long clienteId, Long cajaId, String estado,
                                               LocalDate fechaDesde, LocalDate fechaHasta, int page, int size);
+    // Resuelve el id de venta a partir de su comprobante (serie+número), tenant-scoped.
+    // Retorna null si no existe — no lanza excepción.
+    Long buscarVentaIdPorComprobante(Long empresaId, String serie, Integer numero);
     VentaDetalleResponse obtenerVentaCabecera(Long ventaId, Long empresaId);
     List<VentaItemDetalleResponse> listarItemsVenta(Long ventaId);
     List<PagoResponse> listarPagosVenta(Long ventaId);

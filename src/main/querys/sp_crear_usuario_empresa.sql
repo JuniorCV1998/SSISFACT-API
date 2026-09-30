@@ -37,11 +37,11 @@ BEGIN
                'Solo puedes asignar roles de tipo trabajador (CAJERO, SUPERVISOR, ALMACEN, AUDITOR)' AS mensaje,
                0 AS id;
 
-    ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = p_email) THEN
+    ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE email = p_email OR documento = p_email) THEN
         ROLLBACK;
         SELECT 'ERROR_EMAIL_EXISTE' AS estado, 'Ya existe un usuario con ese email' AS mensaje, 0 AS id;
 
-    ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = p_documento) THEN
+    ELSEIF EXISTS (SELECT 1 FROM usuarios WHERE documento = p_documento OR email = p_documento) THEN
         ROLLBACK;
         SELECT 'ERROR_DOCUMENTO_EXISTE' AS estado, 'Ya existe un usuario con ese documento' AS mensaje, 0 AS id;
 
@@ -76,7 +76,9 @@ BEGIN
         asignar roles de tipo 'USER' (CAJERO, SUPERVISOR, ALMACEN, AUDITOR) —
         roles de tipo 'ADMIN' o 'SYSTEM' están reservados al superadmin de la
         plataforma (ver sp_asignar_rol_usuario). email y documento son únicos
-        en toda la plataforma (no solo dentro de la empresa).
+        en toda la plataforma (no solo dentro de la empresa), y se validan de
+        forma cruzada (un email no puede coincidir con el documento de otro
+        usuario y viceversa) porque el login acepta ambos indistintamente.
     Estados posibles:
         OK, ERROR_ROL, ERROR_ROL_NO_PERMITIDO, ERROR_EMAIL_EXISTE,
         ERROR_DOCUMENTO_EXISTE, ERROR_SUCURSAL

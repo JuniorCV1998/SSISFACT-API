@@ -11,6 +11,7 @@ BEGIN
 
     DECLARE v_rol_id  BIGINT;
     DECLARE v_rol_tipo VARCHAR(10);
+    DECLARE v_rol_actual_tipo VARCHAR(10);
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
@@ -28,26 +29,44 @@ BEGIN
 
     ELSE
 
-        SELECT id, tipo INTO v_rol_id, v_rol_tipo FROM roles WHERE nombre = p_rol LIMIT 1;
+        -- El administrador de la empresa nace ADMIN y ese rol es fijo: no se
+        -- puede reemplazar por este endpoint (ni siquiera por otro admin).
+        SELECT r.tipo INTO v_rol_actual_tipo
+        FROM usuario_roles ur
+        INNER JOIN roles r ON r.id = ur.rol_id
+        WHERE ur.usuario_id = p_usuario_id
+        LIMIT 1;
 
-        IF v_rol_id IS NULL THEN
+        IF v_rol_actual_tipo IS NOT NULL AND v_rol_actual_tipo <> 'USER' THEN
             ROLLBACK;
-            SELECT 'ERROR_ROL' AS estado, 'El rol indicado no existe' AS mensaje, 0 AS id;
-
-        ELSEIF v_rol_tipo IS NULL OR v_rol_tipo <> 'USER' THEN
-            ROLLBACK;
-            SELECT 'ERROR_ROL_NO_PERMITIDO' AS estado,
-                   'Solo puedes asignar roles de tipo trabajador (CAJERO, SUPERVISOR, ALMACEN, AUDITOR)' AS mensaje,
+            SELECT 'ERROR_ES_ADMIN' AS estado,
+                   'No puedes cambiar el rol del administrador de la empresa' AS mensaje,
                    0 AS id;
 
         ELSE
-            DELETE FROM usuario_roles WHERE usuario_id = p_usuario_id;
 
-            INSERT INTO usuario_roles (usuario_id, rol_id, fecha_creacion)
-            VALUES (p_usuario_id, v_rol_id, NOW());
+            SELECT id, tipo INTO v_rol_id, v_rol_tipo FROM roles WHERE nombre = p_rol LIMIT 1;
 
-            COMMIT;
-            SELECT 'OK' AS estado, CONCAT('Rol actualizado a ', p_rol) AS mensaje, p_usuario_id AS id;
+            IF v_rol_id IS NULL THEN
+                ROLLBACK;
+                SELECT 'ERROR_ROL' AS estado, 'El rol indicado no existe' AS mensaje, 0 AS id;
+
+            ELSEIF v_rol_tipo IS NULL OR v_rol_tipo <> 'USER' THEN
+                ROLLBACK;
+                SELECT 'ERROR_ROL_NO_PERMITIDO' AS estado,
+                       'Solo puedes asignar roles de tipo trabajador (CAJERO, SUPERVISOR, ALMACEN, AUDITOR)' AS mensaje,
+                       0 AS id;
+
+            ELSE
+                DELETE FROM usuario_roles WHERE usuario_id = p_usuario_id;
+
+                INSERT INTO usuario_roles (usuario_id, rol_id, fecha_creacion)
+                VALUES (p_usuario_id, v_rol_id, NOW());
+
+                COMMIT;
+                SELECT 'OK' AS estado, CONCAT('Rol actualizado a ', p_rol) AS mensaje, p_usuario_id AS id;
+
+            END IF;
 
         END IF;
 
@@ -63,9 +82,10 @@ BEGIN
         superadmin de la plataforma, sin restricción de tipo salvo bloquear
         'SUPERADMIN'), este SP solo permite asignar roles de tipo 'USER' —
         un admin de empresa nunca puede promoverse a sí mismo ni a otro
-        usuario a ADMIN/SUNAT/SUPERADMIN desde aquí.
+        usuario a ADMIN/SUNAT/SUPERADMIN desde aquí. Tampoco se puede cambiar
+        el rol de quien YA es ADMIN: ese rol nace fijo con la empresa.
     Estados posibles:
-        OK, ERROR_USUARIO, ERROR_ROL, ERROR_ROL_NO_PERMITIDO
+        OK, ERROR_USUARIO, ERROR_ES_ADMIN, ERROR_ROL, ERROR_ROL_NO_PERMITIDO
     ===============================================================================
     */
 

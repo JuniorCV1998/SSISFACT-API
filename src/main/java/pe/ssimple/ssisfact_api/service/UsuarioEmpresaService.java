@@ -11,4 +11,7 @@ public interface UsuarioEmpresaService {
     AdminSaveResponse crearUsuario(Long empresaId, String nombre, String email, String documento,
                                     String password, String rol, Long sucursalId);
     AdminSaveResponse asignarRol(Long usuarioId, Long empresaId, String rol);
+    AdminSaveResponse activarUsuario(Long usuarioId, Long empresaId);
+    // actorUsuarioId: quien ejecuta la acción, para bloquear la auto-desactivación.
+    AdminSaveResponse desactivarUsuario(Long usuarioId, Long empresaId, Long actorUsuarioId);
 }

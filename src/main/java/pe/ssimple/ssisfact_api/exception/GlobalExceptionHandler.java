@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -101,6 +102,26 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("La imagen supera el tamaño máximo permitido (5MB)"));
     }
 
+    @ExceptionHandler(UsuarioInactivoException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleUsuarioInactivo(UsuarioInactivoException ex) {
+
+        log.warn("Login bloqueado por estado de usuario: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmpresaInactivaException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleEmpresaInactiva(EmpresaInactivaException ex) {
+
+        log.warn("Login bloqueado por estado de empresa: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(AccesoSucursalDenegadoException.class)
     public ResponseEntity<ApiResponse<Void>>
     handleAccesoSucursalDenegado(AccesoSucursalDenegadoException ex) {
@@ -108,6 +129,16 @@ public class GlobalExceptionHandler {
         log.warn("Acceso a sucursal denegado: {}", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleRateLimitExceeded(RateLimitExceededException ex) {
+
+        log.warn("Límite de mensajes del asistente alcanzado: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -172,6 +203,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(SqlErrorMapper.toSafeMessage(cause.getMessage())));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleAccessDenied(AccessDeniedException ex) {
+
+        log.warn("Acceso denegado por rol insuficiente: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("No tienes permisos para esta acción"));
     }
 
     @ExceptionHandler(RuntimeException.class)

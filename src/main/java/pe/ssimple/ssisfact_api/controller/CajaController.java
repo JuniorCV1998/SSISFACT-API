@@ -19,6 +19,8 @@ import pe.ssimple.ssisfact_api.service.CustomUserDetails;
 import pe.ssimple.ssisfact_api.util.ResponseBuilder;
 import pe.ssimple.ssisfact_api.util.SucursalAccessGuard;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/caja")
 @RequiredArgsConstructor
@@ -61,6 +63,9 @@ public class CajaController {
                 result != null ? "Caja abierta encontrada" : "No tienes una caja abierta", result));
     }
 
+    // sucursalId es ignorado para no-admin: siempre se les fuerza SU sucursal
+    // asignada, sin importar lo que manden. Si no tienen sucursal asignada,
+    // no ven nada (no se filtra "sin sucursal" = toda la empresa).
     @GetMapping("/listar")
     public ResponseEntity<ApiResponse<CajaListResponse>> listarCajas(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -69,8 +74,16 @@ public class CajaController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
 
+        boolean esAdmin = esAdmin(user);
+        Long sucursalEfectiva = esAdmin ? sucursalId : user.getSucursalId();
+
+        if (!esAdmin && sucursalEfectiva == null) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Cajas obtenidas correctamente", new CajaListResponse(List.of(), 0, page, size)));
+        }
+
         CajaListResponse result = cajaService.listarCajas(
-                user.getEmpresaId(), sucursalId, estado.isBlank() ? null : estado, page, size);
+                user.getEmpresaId(), sucursalEfectiva, estado.isBlank() ? null : estado, page, size);
 
         return ResponseEntity.ok(ApiResponse.success("Cajas obtenidas correctamente", result));
     }
@@ -87,6 +100,18 @@ public class CajaController {
                     .body(ApiResponse.error("La caja no existe"));
         }
 
+        // La caja propia siempre es visible/cerrable para su dueño, aunque el admin
+        // le haya reasignado la sucursal DESPUÉS de abrirla (caja ya abierta en la
+        // sucursal anterior). El guard de sucursal solo aplica para ver cajas ajenas.
+        if (!resumen.getUsuarioId().equals(user.getUsuarioId())) {
+            sucursalAccessGuard.validar(user, resumen.getSucursalId());
+        }
+
         return ResponseEntity.ok(ApiResponse.success("Resumen de caja obtenido correctamente", resumen));
+    }
+
+    private boolean esAdmin(CustomUserDetails user) {
+        return user.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
 }

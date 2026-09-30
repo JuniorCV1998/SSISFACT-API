@@ -30,4 +30,14 @@ public class RestClientConfig {
                 .setReadTimeout(Duration.ofMillis(decolectaTimeoutMs))
                 .build();
     }
+
+    @Bean
+    public RestTemplate anthropicRestTemplate(
+            RestTemplateBuilder builder,
+            @Value("${anthropic.timeout-ms}") long anthropicTimeoutMs) {
+        return builder
+                .setConnectTimeout(Duration.ofMillis(anthropicTimeoutMs))
+                .setReadTimeout(Duration.ofMillis(anthropicTimeoutMs))
+                .build();
+    }
 }
