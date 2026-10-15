@@ -118,6 +118,12 @@
 			<artifactId>s3</artifactId>
 			<version>2.29.52</version>
 		</dependency>
+		<!-- Generación de PDF del comprobante de venta para envío por WhatsApp -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>1.3.42</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -148,6 +154,14 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- Explícito en vez de heredar "java.version" desde spring-boot-starter-parent:
+					     el resolutor de Maven embebido en el Language Server de VS Code (JDT) no
+					     siempre resuelve bien esa herencia y cae a su nivel máximo soportado,
+					     provocando falsos errores de "feature solo disponible en source level 25+"
+					     en todo el proyecto aunque el build real (mvn) compile sin problema. -->
+					<release>${java.version}</release>
+				</configuration>
 				<executions>
 					<execution>
 						<id>default-compile</id>

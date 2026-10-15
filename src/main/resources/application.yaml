@@ -2,7 +2,7 @@ spring:
   application:
     name: ssisfact-api
   datasource:
-    url: jdbc:mysql://localhost:3306/db_ssimple_ssifact?serverTimezone=America/Lima
+    url: jdbc:mysql://localhost:3306/db_ssimple_ssifact?serverTimezone=America/Lima&useUnicode=true&characterEncoding=UTF-8
     username: root
     password: admin
   jpa:
@@ -61,6 +61,25 @@ assistant:
     cache-ttl-seconds: 300
   cart:
     inactivity-timeout-minutes: 10
+
+# Endpoints públicos de /register (consulta RUC/DNI sin login) — límite por IP
+register:
+  rate-limit:
+    consultas-por-minuto: 10
+
+# Integración WhatsApp (Evolution API) — vinculación, envío de venta y recordatorios programados
+evolution:
+  base-url: ${EVOLUTION_BASE_URL:https://evolution-api-production-ff49.up.railway.app}
+  api-key: ${EVOLUTION_API_KEY:}
+  timeout-ms: 15000
+
+# Webhook de pagos digitales — Yape y Plin (celular con app de automatización) —
+# match automático contra ventas PENDIENTE y límite por IP para el webhook público
+pagos-digitales:
+  matching:
+    ventana-horas: 24
+  rate-limit:
+    consultas-por-minuto: 20
 
 # Almacenamiento de imágenes de productos (Cloudflare R2, S3-compatible)
 r2:

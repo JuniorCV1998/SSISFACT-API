@@ -87,4 +87,15 @@ public class ClienteRepositoryImpl implements ClienteRepository {
             return null;
         }
     }
+
+    @Override
+    public String obtenerTelefono(Long clienteId) {
+
+        List<String> resultado = jdbcTemplate.query(
+                "SELECT telefono FROM clientes WHERE id = ?",
+                (rs, rowNum) -> rs.getString("telefono"),
+                clienteId);
+
+        return resultado.isEmpty() ? null : resultado.get(0);
+    }
 }

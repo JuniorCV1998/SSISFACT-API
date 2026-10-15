@@ -56,4 +56,22 @@ public class SucursalRepositoryImpl implements SucursalRepository {
                 },
                 empresaId, busqueda, estado, page, size);
     }
+
+    @Override
+    public boolean perteneceAEmpresa(Long sucursalId, Long empresaId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM sucursales WHERE id = ? AND empresa_id = ?",
+                Integer.class, sucursalId, empresaId);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public Integer obtenerMaxSucursales(Long empresaId) {
+        // Mismo default (10) que usa sp_crear_o_actualizar_sucursal cuando no hay configuración.
+        List<Integer> resultado = jdbcTemplate.query(
+                "SELECT COALESCE(max_sucursal, 10) FROM configuracion_empresa WHERE empresa_id = ?",
+                (rs, rowNum) -> rs.getInt(1),
+                empresaId);
+        return resultado.isEmpty() ? null : resultado.get(0);
+    }
 }

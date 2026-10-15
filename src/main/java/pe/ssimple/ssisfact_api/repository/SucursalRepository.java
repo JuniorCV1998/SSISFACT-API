@@ -9,4 +9,6 @@ import java.util.List;
 public interface SucursalRepository {
     SucursalSaveResponse guardarSucursal(SucursalRequest request);
     List<SucursalItemResponse> listarSucursales(Long empresaId, String busqueda, int estado, int page, int size);
+    boolean perteneceAEmpresa(Long sucursalId, Long empresaId);
+    Integer obtenerMaxSucursales(Long empresaId);
 }

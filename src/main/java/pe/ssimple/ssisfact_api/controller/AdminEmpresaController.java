@@ -13,8 +13,12 @@ import pe.ssimple.ssisfact_api.dto.Admin.EmpresaAdminListResponse;
 import pe.ssimple.ssisfact_api.dto.Admin.EstadoEmpresaRequest;
 import pe.ssimple.ssisfact_api.dto.Admin.PlanEmpresaRequest;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
+import pe.ssimple.ssisfact_api.dto.Rol.RolAsignableResponse;
 import pe.ssimple.ssisfact_api.service.AdminEmpresaService;
+import pe.ssimple.ssisfact_api.service.RolService;
 import pe.ssimple.ssisfact_api.util.ResponseBuilder;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin/empresas")
@@ -23,6 +27,16 @@ import pe.ssimple.ssisfact_api.util.ResponseBuilder;
 public class AdminEmpresaController {
 
     private final AdminEmpresaService adminEmpresaService;
+    private final RolService rolService;
+
+    // Roles que el SUPERADMIN puede asignar a un usuario de cualquier empresa:
+    // tipo ADMIN (ADMIN, SUNAT) y tipo USER. Nunca incluye SYSTEM (SUPERADMIN).
+    @GetMapping("/roles-asignables")
+    public ResponseEntity<ApiResponse<List<RolAsignableResponse>>> listarRolesAsignables() {
+
+        return ResponseEntity.ok(ApiResponse.success("Roles obtenidos correctamente",
+                rolService.listarAsignablesSuperadmin()));
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<EmpresaAdminListResponse>> listarEmpresas(

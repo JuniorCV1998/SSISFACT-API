@@ -33,4 +33,9 @@ public class VentaRequest {
     // Opcional: una venta puede quedar PENDIENTE sin pagos registrados aún (venta al crédito)
     @Valid
     private List<PagoRequest> pagos;
+
+    // Opcional: atajo para "venta al contado" cuando el caller no arma el desglose de
+    // "pagos" (ej. Fact por voz/chat) — si se indica y "pagos" viene vacío, se genera
+    // automáticamente un único pago por el total de la venta con este método.
+    private String metodoPagoContado;
 }

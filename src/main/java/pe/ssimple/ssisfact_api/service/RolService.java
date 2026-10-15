@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface RolService {
     List<RolAsignableResponse> listarAsignables();
+
+    List<RolAsignableResponse> listarAsignablesSuperadmin();
 }

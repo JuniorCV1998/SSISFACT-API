@@ -40,4 +40,14 @@ public class RestClientConfig {
                 .setReadTimeout(Duration.ofMillis(anthropicTimeoutMs))
                 .build();
     }
+
+    @Bean
+    public RestTemplate evolutionRestTemplate(
+            RestTemplateBuilder builder,
+            @Value("${evolution.timeout-ms}") long evolutionTimeoutMs) {
+        return builder
+                .setConnectTimeout(Duration.ofMillis(evolutionTimeoutMs))
+                .setReadTimeout(Duration.ofMillis(evolutionTimeoutMs))
+                .build();
+    }
 }

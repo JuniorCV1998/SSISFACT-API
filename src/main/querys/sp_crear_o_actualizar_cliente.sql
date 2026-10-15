@@ -102,6 +102,7 @@ BEGIN
                         telefono = p_telefono,
                         email = p_email,
                         direccion = p_direccion,
+                        estado = 1,
                         fecha_actualizacion = NOW()
                     WHERE id = p_id_cliente;
 
@@ -122,6 +123,7 @@ BEGIN
     Descripción:
         Registra o actualiza un cliente. La validación de documento duplicado
         excluye registros con estado=-1 (eliminados definitivamente).
+        Actualizar un cliente lo reactiva (estado=1), incluso si estaba desactivado.
     Estados posibles:
         OK, ERROR, ERROR_EMPRESA, ERROR_TIPO_DOCUMENTO, ERROR_CLIENTE, ERROR_CLIENTE_EXISTE
     ===============================================================================

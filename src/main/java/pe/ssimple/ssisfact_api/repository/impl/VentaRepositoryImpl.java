@@ -168,6 +168,51 @@ public class VentaRepositoryImpl implements VentaRepository {
     }
 
     @Override
+    public void actualizarEstadoVenta(Long ventaId, String estado) {
+
+        jdbcTemplate.update(
+                "UPDATE ventas SET estado = ?, fecha_actualizacion = NOW() WHERE id = ?",
+                estado, ventaId);
+    }
+
+    @Override
+    public BigDecimal obtenerTotalVenta(Long ventaId) {
+
+        List<BigDecimal> resultado = jdbcTemplate.query(
+                "SELECT total FROM ventas WHERE id = ?",
+                (rs, rowNum) -> rs.getBigDecimal("total"),
+                ventaId);
+
+        return resultado.isEmpty() ? null : resultado.get(0);
+    }
+
+    @Override
+    public List<Long> buscarVentasPendientesPorSaldo(Long empresaId, BigDecimal monto, int ventanaHoras) {
+
+        return jdbcTemplate.query(
+                "SELECT v.id FROM ventas v " +
+                        "LEFT JOIN pagos p ON p.venta_id = v.id " +
+                        "WHERE v.empresa_id = ? AND v.estado = 'PENDIENTE' AND v.fecha >= NOW() - INTERVAL ? HOUR " +
+                        "GROUP BY v.id, v.total " +
+                        "HAVING ABS(v.total - COALESCE(SUM(p.monto), 0) - ?) < 0.01",
+                (rs, rowNum) -> rs.getLong("id"),
+                empresaId, ventanaHoras, monto);
+    }
+
+    @Override
+    public List<Long> buscarVentasPendientesPorSaldoParcial(Long empresaId, BigDecimal monto, int ventanaHoras) {
+
+        return jdbcTemplate.query(
+                "SELECT v.id FROM ventas v " +
+                        "LEFT JOIN pagos p ON p.venta_id = v.id " +
+                        "WHERE v.empresa_id = ? AND v.estado = 'PENDIENTE' AND v.fecha >= NOW() - INTERVAL ? HOUR " +
+                        "GROUP BY v.id, v.total " +
+                        "HAVING (v.total - COALESCE(SUM(p.monto), 0)) - ? > 0.01",
+                (rs, rowNum) -> rs.getLong("id"),
+                empresaId, ventanaHoras, monto);
+    }
+
+    @Override
     public List<VentaListItemResponse> listarVentas(Long empresaId, Long sucursalId, Long clienteId, Long cajaId, String estado,
                                                       LocalDate fechaDesde, LocalDate fechaHasta, int page, int size) {
 
@@ -213,6 +258,17 @@ public class VentaRepositoryImpl implements VentaRepository {
     }
 
     @Override
+    public String obtenerCodigoComprobante(Long ventaId) {
+
+        List<String> resultado = jdbcTemplate.query(
+                "SELECT serie, numero FROM comprobantes WHERE venta_id = ? LIMIT 1",
+                (rs, rowNum) -> ComprobanteCodigoUtil.formatear(rs.getString("serie"), rs.getInt("numero")),
+                ventaId);
+
+        return resultado.isEmpty() ? null : resultado.get(0);
+    }
+
+    @Override
     public VentaDetalleResponse obtenerVentaCabecera(Long ventaId, Long empresaId) {
 
         List<VentaDetalleResponse> resultado = jdbcTemplate.query(
@@ -225,6 +281,8 @@ public class VentaRepositoryImpl implements VentaRepository {
                     cabecera.setEmpresaRuc(rs.getString("empresa_ruc"));
                     cabecera.setEmpresaDireccion(rs.getString("empresa_direccion"));
                     cabecera.setEmpresaLogoUrl(rs.getString("empresa_logo_url"));
+                    cabecera.setEmpresaLogoTicketUrl(rs.getString("empresa_logo_ticket_url"));
+        cabecera.setEmpresaColorPrimario(rs.getString("empresa_color_primario"));
                     cabecera.setTicketMensajePie(rs.getString("ticket_mensaje_pie"));
                     cabecera.setSucursalId(rs.getLong("sucursal_id"));
                     cabecera.setSucursalNombre(rs.getString("sucursal_nombre"));

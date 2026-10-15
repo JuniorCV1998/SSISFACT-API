@@ -11,4 +11,5 @@ public interface ClienteRepository {
     List<ClienteItemResponse> listarClientes(Long empresaId, String busqueda, int estado, int page, int size);
     ClienteSaveResponse desactivarCliente(Long clienteId, Long empresaId);
     Long obtenerClienteGenerico(Long empresaId);
+    String obtenerTelefono(Long clienteId);
 }

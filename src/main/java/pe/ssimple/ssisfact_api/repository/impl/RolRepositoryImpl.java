@@ -18,10 +18,23 @@ public class RolRepositoryImpl implements RolRepository {
     public List<RolAsignableResponse> listarAsignables() {
 
         return jdbcTemplate.query(
-                "SELECT id, nombre, descripcion FROM roles WHERE tipo = 'USER' AND estado = 1 ORDER BY nombre ASC",
-                (rs, rowNum) -> new RolAsignableResponse(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion")));
+                "SELECT id, nombre, descripcion, tipo FROM roles WHERE tipo = 'USER' AND estado = 1 ORDER BY nombre ASC",
+                (rs, rowNum) -> mapear(rs));
+    }
+
+    @Override
+    public List<RolAsignableResponse> listarAsignablesSuperadmin() {
+
+        return jdbcTemplate.query(
+                "SELECT id, nombre, descripcion, tipo FROM roles WHERE tipo IN ('ADMIN', 'USER') AND estado = 1 ORDER BY tipo ASC, nombre ASC",
+                (rs, rowNum) -> mapear(rs));
+    }
+
+    private RolAsignableResponse mapear(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return new RolAsignableResponse(
+                rs.getLong("id"),
+                rs.getString("nombre"),
+                rs.getString("descripcion"),
+                rs.getString("tipo"));
     }
 }

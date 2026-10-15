@@ -14,4 +14,6 @@ public class SucursalListResponse {
     private int totalRegistros;
     private int page;
     private int size;
+    // Máximo de sucursales permitido por el plan de la empresa (configuracion_empresa.max_sucursal).
+    private Integer maxSucursales;
 }

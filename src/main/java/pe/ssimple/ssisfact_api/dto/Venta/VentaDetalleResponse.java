@@ -16,6 +16,11 @@ public class VentaDetalleResponse {
     private String empresaRuc;
     private String empresaDireccion;
     private String empresaLogoUrl;
+    // Logo/sello específico del ticket impreso. Ya viene con fallback al logo
+    // principal (COALESCE en sp_obtener_venta_detalle) si no se configuró uno
+    // propio, así que este campo nunca es null mientras empresaLogoUrl no lo sea.
+    private String empresaLogoTicketUrl;
+    private String empresaColorPrimario;
     // Mensaje libre de pie del ticket configurado en Configuración. Puede venir
     // vacío/null si el admin no configuró uno — el ticket cae a su texto fijo actual.
     private String ticketMensajePie;

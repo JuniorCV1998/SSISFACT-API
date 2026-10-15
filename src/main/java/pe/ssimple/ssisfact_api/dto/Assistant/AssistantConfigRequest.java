@@ -18,7 +18,7 @@ public class AssistantConfigRequest {
     @Pattern(regexp = "CERCANO|FORMAL|DIRECTO", message = "debe ser CERCANO, FORMAL o DIRECTO")
     private String tono;
 
-    @NotBlank(message = "es obligatorio")
+    // Opcional: si no viene, se conserva la voz guardada (por defecto FEMENINA).
     @Pattern(regexp = "FEMENINA|MASCULINA", message = "debe ser FEMENINA o MASCULINA")
     private String vozGenero;
 }

@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
+import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaActualResponse;
 import pe.ssimple.ssisfact_api.dto.Assistant.AssistantChatRequest;
 import pe.ssimple.ssisfact_api.dto.Assistant.AssistantChatResponse;
 import pe.ssimple.ssisfact_api.dto.Assistant.AssistantConfigRequest;
@@ -44,7 +45,8 @@ public class AssistantController {
 
         assistantRateLimiterService.checkLimit(user.getUsuarioId());
 
-        AssistantChatResponse response = claudeService.chat(user, request.getMensaje(), request.getModuloActivo());
+        AssistantChatResponse response = claudeService.chat(
+                user, request.getMensaje(), request.getModuloActivo(), request.getSucursalId());
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -99,6 +101,15 @@ public class AssistantController {
         return ResponseEntity.ok(ApiResponse.success("Pedido vaciado", null));
     }
 
+    @GetMapping("/config")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AssistantConfigResponse>> obtenerConfig(
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        return ResponseEntity.ok(ApiResponse.success("Configuración de Fact obtenida",
+                configActual(user.getEmpresaId())));
+    }
+
     @PutMapping("/config")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AssistantConfigResponse>> actualizarConfig(
@@ -109,6 +120,12 @@ public class AssistantController {
                 request.getTono(), request.getVozGenero());
 
         return ResponseEntity.ok(ApiResponse.success("Configuración de Fact actualizada",
-                new AssistantConfigResponse(request.getNombreAsistente(), request.getTono(), request.getVozGenero())));
+                configActual(user.getEmpresaId())));
+    }
+
+    private AssistantConfigResponse configActual(Long empresaId) {
+        EmpresaActualResponse empresa = empresaRepository.obtenerActual(empresaId);
+        return new AssistantConfigResponse(empresa.getAsistenteNombre(), empresa.getAsistenteTono(),
+                empresa.getVozGenero());
     }
 }

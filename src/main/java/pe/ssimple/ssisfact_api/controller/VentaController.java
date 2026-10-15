@@ -3,16 +3,21 @@ package pe.ssimple.ssisfact_api.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
+import pe.ssimple.ssisfact_api.dto.Venta.EnviarVentaWhatsappRequest;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaDetalleResponse;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaListResponse;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaRequest;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaResponse;
 import pe.ssimple.ssisfact_api.service.CustomUserDetails;
+import pe.ssimple.ssisfact_api.service.VentaPdfService;
 import pe.ssimple.ssisfact_api.service.VentaService;
+import pe.ssimple.ssisfact_api.service.WhatsappService;
 import pe.ssimple.ssisfact_api.util.SucursalAccessGuard;
 
 import java.time.LocalDate;
@@ -24,6 +29,8 @@ import java.util.List;
 public class VentaController {
 
     private final VentaService ventaService;
+    private final WhatsappService whatsappService;
+    private final VentaPdfService ventaPdfService;
     private final SucursalAccessGuard sucursalAccessGuard;
 
     @PostMapping("/registrar")
@@ -87,6 +94,41 @@ public class VentaController {
         }
 
         return ResponseEntity.ok(ApiResponse.success("Venta obtenida correctamente", result));
+    }
+
+    @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> obtenerVentaPdf(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        VentaDetalleResponse venta = ventaService.obtenerVentaDetalle(id, user.getEmpresaId());
+        if (!venta.getUsuarioId().equals(user.getUsuarioId())) {
+            sucursalAccessGuard.validar(user, venta.getSucursalId());
+        }
+
+        byte[] pdf = ventaPdfService.generarPdf(venta);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"venta-" + id + ".pdf\"")
+                .body(pdf);
+    }
+
+    @PostMapping("/{id}/enviar-whatsapp")
+    public ResponseEntity<ApiResponse<Void>> enviarVentaWhatsapp(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) EnviarVentaWhatsappRequest request,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        VentaDetalleResponse venta = ventaService.obtenerVentaDetalle(id, user.getEmpresaId());
+        if (!venta.getUsuarioId().equals(user.getUsuarioId())) {
+            sucursalAccessGuard.validar(user, venta.getSucursalId());
+        }
+
+        String numero = request != null ? request.getNumero() : null;
+        whatsappService.enviarVenta(user.getEmpresaId(), id, numero);
+
+        return ResponseEntity.ok(ApiResponse.success("Comprobante enviado por WhatsApp", null));
     }
 
     private boolean esAdmin(CustomUserDetails user) {

@@ -11,4 +11,6 @@ public class RolAsignableResponse {
     private Long id;
     private String nombre;
     private String descripcion;
+    // "ADMIN" (ADMIN, SUNAT) o "USER" (CAJERO, SUPERVISOR, ALMACEN, AUDITOR)
+    private String tipo;
 }

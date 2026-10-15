@@ -19,10 +19,14 @@ public class EmpresaActualResponse {
     private String telefono;
     private String email;
     private String logoUrl;
+    private String logoTicketUrl;
     private boolean igvHabilitado;
     private BigDecimal igvPorcentaje;
     private String ticketMensajePie;
     private String asistenteNombre;
     private String asistenteTono;
     private String vozGenero;
+    private String colorPrimario;
+    private String colorSecundario;
+    private String colorAcento;
 }

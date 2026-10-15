@@ -15,7 +15,6 @@ import pe.ssimple.ssisfact_api.dto.Stock.StockRequest;
 import pe.ssimple.ssisfact_api.dto.Stock.StockResponse;
 import pe.ssimple.ssisfact_api.dto.Sucursal.SucursalItemResponse;
 import pe.ssimple.ssisfact_api.dto.Sucursal.SucursalListResponse;
-import pe.ssimple.ssisfact_api.dto.Venta.PagoRequest;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaDetalleResponse;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaItemRequest;
 import pe.ssimple.ssisfact_api.dto.Venta.VentaListItemResponse;
@@ -78,7 +77,7 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public AnthropicContentBlock ejecutar(String toolName, Map<String, Object> input, String toolUseId, CustomUserDetails user) {
+    public AnthropicContentBlock ejecutar(String toolName, Map<String, Object> input, String toolUseId, CustomUserDetails user, Long sucursalId) {
 
         Object resultado;
         boolean isError = false;
@@ -86,19 +85,19 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         try {
             resultado = switch (toolName) {
                 case "buscar_cliente" -> buscarCliente(input, user);
-                case "registrar_venta" -> registrarVenta(input, user);
-                case "buscar_producto", "consultar_stock" -> buscarProducto(input, user);
-                case "registrar_ingreso_stock" -> registrarIngresoStock(input, user);
+                case "registrar_venta" -> registrarVenta(input, user, sucursalId);
+                case "buscar_producto", "consultar_stock" -> buscarProducto(input, user, sucursalId);
+                case "registrar_ingreso_stock" -> registrarIngresoStock(input, user, sucursalId);
                 case "reporte_ventas" -> reporteVentas(input, user);
                 case "consultar_comprobante" -> consultarComprobante(input, user);
                 case "anular_comprobante" -> anularComprobante(input, user);
                 case "registrar_cliente" -> registrarCliente(input, user);
                 case "guardar_correccion" -> guardarCorreccion(input, user);
-                case "agregar_al_pedido" -> agregarAlPedido(input, user);
+                case "agregar_al_pedido" -> agregarAlPedido(input, user, sucursalId);
                 case "quitar_del_pedido" -> quitarDelPedido(input, user);
                 case "ver_pedido" -> assistantCarritoService.obtenerCarrito(user.getUsuarioId());
                 case "vaciar_pedido" -> vaciarPedido(user);
-                case "emitir_pedido" -> emitirPedido(input, user);
+                case "emitir_pedido" -> emitirPedido(input, user, sucursalId);
                 default -> Map.of("error", "Herramienta desconocida: " + toolName);
             };
         } catch (PermisoAsistenteException e) {
@@ -122,10 +121,18 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         return Map.of("clientes", resultado);
     }
 
-    private Object registrarVenta(Map<String, Object> input, CustomUserDetails user) {
+    private Object registrarVenta(Map<String, Object> input, CustomUserDetails user, Long sucursalId) {
+
+        if (sucursalId == null) {
+            return Map.of("error", "No se pudo determinar la sucursal. ¿Desde qué sucursal estás vendiendo?");
+        }
+        String metodoPago = str(input, "metodoPago");
+        if (metodoPago == null || metodoPago.isBlank()) {
+            return Map.of("error", "Falta el método de pago. Pregunta al usuario con qué método paga: efectivo, yape, plin, transferencia o tarjeta.");
+        }
 
         VentaRequest request = new VentaRequest();
-        request.setSucursalId(user.getSucursalId());
+        request.setSucursalId(sucursalId);
         request.setTipoDocumento(str(input, "tipoDocumento") != null ? str(input, "tipoDocumento") : "NOTA_PEDIDO");
         Long clienteId = longVal(input, "clienteId");
         request.setClienteId(clienteId);
@@ -142,41 +149,28 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
             items.add(item);
         }
         request.setItems(items);
-
-        List<Map<String, Object>> pagosInput = list(input, "pagos");
-        if (!pagosInput.isEmpty()) {
-            List<PagoRequest> pagos = new ArrayList<>();
-            for (Map<String, Object> pagoInput : pagosInput) {
-                PagoRequest pago = new PagoRequest();
-                pago.setMetodo(str(pagoInput, "metodo"));
-                pago.setMonto(bigDecimal(pagoInput, "monto"));
-                pago.setMontoRecibido(bigDecimal(pagoInput, "montoRecibido"));
-                pago.setReferencia(str(pagoInput, "referencia"));
-                pagos.add(pago);
-            }
-            request.setPagos(pagos);
-        }
+        request.setMetodoPagoContado(metodoPago);
 
         VentaResponse response = ventaService.registrarVenta(request, user.getEmpresaId(), user.getUsuarioId());
         return response;
     }
 
-    private Object buscarProducto(Map<String, Object> input, CustomUserDetails user) {
+    private Object buscarProducto(Map<String, Object> input, CustomUserDetails user, Long sucursalId) {
         String busqueda = str(input, "busqueda");
         String nombreSucursal = str(input, "sucursal");
 
-        Long sucursalId = user.getSucursalId();
+        Long sucursalEfectiva = sucursalId;
         String sucursalConsultada = null;
         if (nombreSucursal != null && !nombreSucursal.isBlank()) {
             SucursalItemResponse sucursal = resolverSucursal(nombreSucursal, user);
             if (sucursal == null) {
                 return Map.of("error", "No se encontró una sucursal llamada '" + nombreSucursal + "'");
             }
-            sucursalId = sucursal.getId();
+            sucursalEfectiva = sucursal.getId();
             sucursalConsultada = sucursal.getNombre();
         }
 
-        ProductoListResponse resultado = buscarProductoTolerante(user.getEmpresaId(), busqueda, sucursalId, 20);
+        ProductoListResponse resultado = buscarProductoTolerante(user.getEmpresaId(), busqueda, sucursalEfectiva, 20);
         List<Map<String, Object>> productos = new ArrayList<>();
         for (ProductoItemResponse p : resultado.getItems()) {
             Map<String, Object> item = new LinkedHashMap<>();
@@ -265,11 +259,15 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         return mejor;
     }
 
-    private Object registrarIngresoStock(Map<String, Object> input, CustomUserDetails user) {
+    private Object registrarIngresoStock(Map<String, Object> input, CustomUserDetails user, Long sucursalId) {
+
+        if (sucursalId == null) {
+            return Map.of("error", "No se pudo determinar la sucursal. ¿Desde qué sucursal estás registrando el ingreso?");
+        }
 
         StockRequest request = new StockRequest();
         request.setProductoId(longVal(input, "productoId"));
-        request.setSucursalId(user.getSucursalId());
+        request.setSucursalId(sucursalId);
         request.setCantidad(intVal(input, "cantidad"));
         request.setTipo(str(input, "tipo"));
         request.setMotivo(str(input, "motivo"));
@@ -357,7 +355,7 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         return Map.of("guardado", true);
     }
 
-    private Object agregarAlPedido(Map<String, Object> input, CustomUserDetails user) {
+    private Object agregarAlPedido(Map<String, Object> input, CustomUserDetails user, Long sucursalId) {
         String busqueda = str(input, "busqueda");
         if (busqueda == null || busqueda.isBlank()) {
             return Map.of("error", "Debes indicar qué producto agregar");
@@ -365,7 +363,7 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         BigDecimal cantidad = bigDecimal(input, "cantidad");
         if (cantidad == null) cantidad = BigDecimal.ONE;
 
-        ProductoListResponse resultado = buscarProductoTolerante(user.getEmpresaId(), busqueda, user.getSucursalId(), 5);
+        ProductoListResponse resultado = buscarProductoTolerante(user.getEmpresaId(), busqueda, sucursalId, 5);
         List<ProductoItemResponse> items = resultado.getItems();
         if (items.isEmpty()) {
             return Map.of("error", "No se encontró ningún producto con '" + busqueda + "'");
@@ -410,16 +408,24 @@ public class ToolExecutorServiceImpl implements ToolExecutorService {
         return Map.of("vaciado", true);
     }
 
-    private Object emitirPedido(Map<String, Object> input, CustomUserDetails user) {
+    private Object emitirPedido(Map<String, Object> input, CustomUserDetails user, Long sucursalId) {
         List<CarritoItemResponse> items = assistantCarritoService.obtenerItemsCrudos(user.getUsuarioId());
         if (items.isEmpty()) {
             return Map.of("error", "El pedido en curso está vacío, agrega productos antes de emitir la venta");
         }
+        if (sucursalId == null) {
+            return Map.of("error", "No se pudo determinar la sucursal. ¿Desde qué sucursal estás vendiendo?");
+        }
+        String metodoPago = str(input, "metodoPago");
+        if (metodoPago == null || metodoPago.isBlank()) {
+            return Map.of("error", "Falta el método de pago. Pregunta al usuario con qué método paga: efectivo, yape, plin, transferencia o tarjeta.");
+        }
 
         VentaRequest request = new VentaRequest();
-        request.setSucursalId(user.getSucursalId());
+        request.setSucursalId(sucursalId);
         request.setClienteId(longVal(input, "clienteId"));
         request.setTipoDocumento(str(input, "tipoDocumento") != null ? str(input, "tipoDocumento") : "NOTA_PEDIDO");
+        request.setMetodoPagoContado(metodoPago);
 
         List<VentaItemRequest> ventaItems = new ArrayList<>();
         for (CarritoItemResponse item : items) {

@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import pe.ssimple.ssisfact_api.dto.Admin.AdminSaveResponse;
 import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaActualResponse;
+import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaAparienciaResponse;
 import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaActualizarRequest;
+import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaTemaRequest;
 import pe.ssimple.ssisfact_api.exception.ImagenValidationException;
 import pe.ssimple.ssisfact_api.repository.EmpresaRepository;
 import pe.ssimple.ssisfact_api.service.EmpresaService;
@@ -26,6 +28,18 @@ public class EmpresaServiceImpl implements EmpresaService {
     @Override
     public EmpresaActualResponse obtenerActual(Long empresaId) {
         return empresaRepository.obtenerActual(empresaId);
+    }
+
+    @Override
+    public EmpresaAparienciaResponse obtenerApariencia(Long empresaId) {
+        EmpresaActualResponse empresa = empresaRepository.obtenerActual(empresaId);
+        return new EmpresaAparienciaResponse(
+                empresa.getNombre(),
+                empresa.getLogoUrl(),
+                empresa.getLogoTicketUrl(),
+                empresa.getColorPrimario(),
+                empresa.getColorSecundario(),
+                empresa.getColorAcento());
     }
 
     @Override
@@ -71,6 +85,35 @@ public class EmpresaServiceImpl implements EmpresaService {
         storageService.eliminarImagen(logoAnterior);
 
         return new AdminSaveResponse("OK", "Logo actualizado correctamente", empresaId);
+    }
+
+    @Override
+    public AdminSaveResponse actualizarTema(Long empresaId, EmpresaTemaRequest request) {
+
+        empresaRepository.actualizarTema(empresaId,
+                request.getColorPrimario().toUpperCase(),
+                request.getColorSecundario().toUpperCase(),
+                request.getColorAcento().toUpperCase());
+
+        return new AdminSaveResponse("OK", "Tema actualizado correctamente", empresaId);
+    }
+
+    @Override
+    public AdminSaveResponse actualizarLogoTicket(Long empresaId, MultipartFile file) {
+
+        if (file != null && file.getSize() > LOGO_MAX_BYTES) {
+            throw new ImagenValidationException("El logo del ticket supera el tamaño máximo permitido (2MB)");
+        }
+
+        String logoAnterior = empresaRepository.obtenerLogoTicketUrlActual(empresaId);
+
+        String logoUrl = storageService.subirImagen(file, "empresas/" + empresaId + "/ticket");
+
+        empresaRepository.actualizarLogoTicket(empresaId, logoUrl);
+
+        storageService.eliminarImagen(logoAnterior);
+
+        return new AdminSaveResponse("OK", "Logo del ticket actualizado correctamente", empresaId);
     }
 
     private String vacioComoNull(String valor) {

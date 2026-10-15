@@ -92,6 +92,56 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(WhatsappValidationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleWhatsappValidation(WhatsappValidationException ex) {
+
+        log.warn("WhatsApp: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(WhatsappIntegrationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleWhatsappIntegration(WhatsappIntegrationException ex) {
+
+        log.error("WhatsApp: integración con Evolution API no disponible");
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(PagoDigitalValidationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handlePagoDigitalValidation(PagoDigitalValidationException ex) {
+
+        log.warn("PagoDigital: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotificacionValidationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleNotificacionValidation(NotificacionValidationException ex) {
+
+        log.warn("Notificación: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(WebhookAutenticacionException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleWebhookAutenticacion(WebhookAutenticacionException ex) {
+
+        log.warn("Webhook: autenticación rechazada — {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>>
     handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {

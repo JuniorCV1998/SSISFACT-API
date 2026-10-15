@@ -18,4 +18,9 @@ public class RolServiceImpl implements RolService {
     public List<RolAsignableResponse> listarAsignables() {
         return rolRepository.listarAsignables();
     }
+
+    @Override
+    public List<RolAsignableResponse> listarAsignablesSuperadmin() {
+        return rolRepository.listarAsignablesSuperadmin();
+    }
 }

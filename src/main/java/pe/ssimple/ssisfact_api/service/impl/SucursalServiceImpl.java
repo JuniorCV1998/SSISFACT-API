@@ -38,6 +38,8 @@ public class SucursalServiceImpl implements SucursalService {
 
         int total = items.isEmpty() ? 0 : items.get(0).getTotalRegistros();
 
-        return new SucursalListResponse(items, total, page, size);
+        Integer maxSucursales = sucursalRepository.obtenerMaxSucursales(empresaId);
+
+        return new SucursalListResponse(items, total, page, size, maxSucursales);
     }
 }

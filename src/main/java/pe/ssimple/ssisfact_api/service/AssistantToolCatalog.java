@@ -35,8 +35,9 @@ public final class AssistantToolCatalog {
                                                                 "precioUnitario", prop("number", "Precio unitario, opcional (usa el precio actual si no se indica)"),
                                                                 "descuento", prop("number", "Descuento en monto fijo sobre esta línea, opcional")),
                                                         List.of("productoId", "cantidad"))),
-                                        "descuento", prop("number", "Descuento global en monto fijo, opcional")),
-                                List.of("items"))),
+                                        "descuento", prop("number", "Descuento global en monto fijo, opcional"),
+                                        "metodoPago", prop("string", "EFECTIVO, YAPE, PLIN, TRANSFERENCIA o TARJETA. Obligatorio: si el usuario no ha dicho con qué método paga, pregúntaselo antes de llamar a esta herramienta — no asumas un método por defecto.")),
+                                List.of("items", "metodoPago"))),
 
                 tool("buscar_producto",
                         "Busca productos del catálogo de la empresa por nombre o código.",
@@ -126,12 +127,16 @@ public final class AssistantToolCatalog {
                         schema(Map.of(), List.of())),
 
                 tool("emitir_pedido",
-                        "Convierte el pedido en curso (modo manos libres) en una venta real. Úsalo de inmediato cuando el usuario diga algo " +
-                                "equivalente a 'emite venta', 'cierra el pedido' o 'eso es todo' — no es una acción destructiva, no pidas confirmación extra.",
+                        "Convierte el pedido en curso (modo manos libres) en una venta real. Requiere que el usuario ya haya indicado el " +
+                                "método de pago en la conversación — si no lo ha dicho, NO llames a esta herramienta: pregúntale primero con qué " +
+                                "método paga (efectivo, yape, plin, transferencia o tarjeta). Una vez tengas el método de pago, úsala de inmediato " +
+                                "cuando el usuario diga algo equivalente a 'emite venta', 'cierra el pedido' o 'eso es todo' — no es una acción " +
+                                "destructiva, no pidas más confirmación que el método de pago.",
                         schema(orderedMap(
                                         "clienteId", prop("integer", "Id del cliente, opcional"),
-                                        "tipoDocumento", prop("string", "NOTA_PEDIDO, BOLETA o GUIA. Por defecto NOTA_PEDIDO si no se indica")),
-                                List.of()))
+                                        "tipoDocumento", prop("string", "NOTA_PEDIDO, BOLETA o GUIA. Por defecto NOTA_PEDIDO si no se indica"),
+                                        "metodoPago", prop("string", "EFECTIVO, YAPE, PLIN, TRANSFERENCIA o TARJETA — obligatorio, ya debe haberlo dicho el usuario antes de llamar a esta herramienta.")),
+                                List.of("metodoPago")))
         ));
 
         // Cachea todo el catálogo de tools como un único prefijo (junto con el

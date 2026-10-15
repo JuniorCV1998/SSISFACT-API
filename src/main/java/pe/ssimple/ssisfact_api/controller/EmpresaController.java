@@ -11,6 +11,7 @@ import pe.ssimple.ssisfact_api.dto.Admin.AdminSaveResponse;
 import pe.ssimple.ssisfact_api.dto.ApiResponse;
 import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaActualResponse;
 import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaActualizarRequest;
+import pe.ssimple.ssisfact_api.dto.Empresa.EmpresaTemaRequest;
 import pe.ssimple.ssisfact_api.service.CustomUserDetails;
 import pe.ssimple.ssisfact_api.service.EmpresaService;
 import pe.ssimple.ssisfact_api.util.ResponseBuilder;
@@ -48,6 +49,26 @@ public class EmpresaController {
             @AuthenticationPrincipal CustomUserDetails user) {
 
         AdminSaveResponse response = empresaService.actualizarLogo(user.getEmpresaId(), file);
+
+        return ResponseBuilder.build(response, "OK");
+    }
+
+    @PutMapping("/tema")
+    public ResponseEntity<ApiResponse<AdminSaveResponse>> actualizarTema(
+            @Valid @RequestBody EmpresaTemaRequest request,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        AdminSaveResponse response = empresaService.actualizarTema(user.getEmpresaId(), request);
+
+        return ResponseBuilder.build(response, "OK");
+    }
+
+    @PostMapping(value = "/logo-ticket", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<AdminSaveResponse>> actualizarLogoTicket(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
+        AdminSaveResponse response = empresaService.actualizarLogoTicket(user.getEmpresaId(), file);
 
         return ResponseBuilder.build(response, "OK");
     }

@@ -8,4 +8,5 @@ public class RucPublicoResponse {
     private String codTipoDoc;
     private String nroDocumento;
     private String razonSocial;
+    private String direccion;
 }

@@ -43,6 +43,11 @@ public class SecurityConfig {
                 .requestMatchers("register/validateCompany").permitAll()
                 .requestMatchers("register/confirmCompany").permitAll()
                 .requestMatchers("register/consultarRuc/**").permitAll()
+                .requestMatchers("register/consultarDni/**").permitAll()
+                // Webhook de pagos digitales (Yape/Plin): lo llama una app de automatización
+                // del celular, no un usuario logueado — se autentica con su propio token
+                // (ver PagoDigitalService).
+                .requestMatchers("/webhooks/pagos-digitales/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             )
